@@ -1,0 +1,551 @@
+- generic [ref=e3]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: FinPilot
+      - generic [ref=e8]: Local-first investing lab
+    - navigation [ref=e9]:
+      - link "Setup" [ref=e10] [cursor=pointer]:
+        - /url: /
+      - link "Strategy" [ref=e11] [cursor=pointer]:
+        - /url: /strategy
+      - link "Backtest" [ref=e12] [cursor=pointer]:
+        - /url: /backtest
+      - link "Portfolio" [ref=e13] [cursor=pointer]:
+        - /url: /portfolio
+      - link "Trading" [ref=e14] [cursor=pointer]:
+        - /url: /trading
+      - link "Audit" [ref=e15] [cursor=pointer]:
+        - /url: /audit
+      - link "Settings" [ref=e16] [cursor=pointer]:
+        - /url: /settings
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: Workspace
+        - heading "Truth-first controls, local-only analytics" [level=1] [ref=e21]
+      - generic [ref=e23]: Paper default
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: Settings
+          - heading "LLM provider" [level=3] [ref=e30]
+        - paragraph [ref=e31]: Hosted providers need their matching key in your local .env. Ollama only needs a running local model.
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e34]:
+              - generic [ref=e35]: Provider
+              - generic [ref=e36]: Provider changes apply on the next app run.
+            - combobox "Provider Provider changes apply on the next app run." [ref=e37]:
+              - option "OpenAI"
+              - option "Anthropic"
+              - option "Google"
+              - option "Ollama" [selected]
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - generic [ref=e40]: Model
+              - generic [ref=e41]: Leave blank to use the provider default.
+            - textbox "Model Leave blank to use the provider default." [ref=e42]:
+              - /placeholder: provider default
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - generic [ref=e45]: Analysis temperature
+              - generic [ref=e46]: Lower keeps financial analysis tighter and more factual.
+            - spinbutton "Analysis temperature Lower keeps financial analysis tighter and more factual." [ref=e47]: "0.2"
+          - generic [ref=e48]:
+            - generic [ref=e49]:
+              - generic [ref=e50]: Strategy chat temperature
+              - generic [ref=e51]: Higher is more exploratory when brainstorming strategies.
+            - spinbutton "Strategy chat temperature Higher is more exploratory when brainstorming strategies." [ref=e52]: "0.7"
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - generic [ref=e55]: Max tokens per request
+              - generic [ref=e56]: Ceiling for a single model call.
+            - spinbutton "Max tokens per request Ceiling for a single model call." [ref=e57]: "4000"
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - generic [ref=e60]: Max session cost (USD)
+              - generic [ref=e61]: Soft budget cap for one session.
+            - spinbutton "Max session cost (USD) Soft budget cap for one session." [ref=e62]: "1000"
+          - generic [ref=e63]:
+            - generic [ref=e64]:
+              - generic [ref=e65]: Show token usage in UI
+              - generic [ref=e66]: Keep usage/cost context visible while you work.
+            - button "Show token usage in UI Keep usage/cost context visible while you work." [ref=e67] [cursor=pointer]:
+              - generic [ref=e68]: Enabled
+              - generic [ref=e69]: "On"
+          - generic [ref=e70]:
+            - generic [ref=e71]:
+              - generic [ref=e72]: Ollama base URL
+              - generic [ref=e73]: Local endpoint used when the provider is Ollama.
+            - textbox "Ollama base URL Local endpoint used when the provider is Ollama." [ref=e74]:
+              - /placeholder: http://localhost:11434
+              - text: http://localhost:11434
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - generic [ref=e77]: Ollama model
+              - generic [ref=e78]: Model name already pulled into your local Ollama install.
+            - textbox "Ollama model Model name already pulled into your local Ollama install." [ref=e79]:
+              - /placeholder: llama3.2
+              - text: llama3.2
+        - generic [ref=e80]:
+          - generic [ref=e81]: No unsaved changes.
+          - generic [ref=e82]:
+            - button "Reset" [disabled] [ref=e83]
+            - button "Save changes" [disabled] [ref=e84]
+      - generic [ref=e85]:
+        - generic [ref=e87]:
+          - generic [ref=e88]: Settings
+          - heading "Data sources" [level=3] [ref=e89]
+        - paragraph [ref=e90]: Turn on only the providers you actually want FinPilot to use. Missing API keys will still prevent those providers from working.
+        - generic [ref=e91]:
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - generic [ref=e94]: Use yfinance
+              - generic [ref=e95]: Core free market data.
+            - button "Use yfinance Core free market data." [ref=e96] [cursor=pointer]:
+              - generic [ref=e97]: Enabled
+              - generic [ref=e98]: "On"
+          - generic [ref=e99]:
+            - generic [ref=e100]:
+              - generic [ref=e101]: Use FRED
+              - generic [ref=e102]: Macro series and rates data.
+            - button "Use FRED Macro series and rates data." [ref=e103] [cursor=pointer]:
+              - generic [ref=e104]: Enabled
+              - generic [ref=e105]: "On"
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - generic [ref=e108]: Use SEC EDGAR
+              - generic [ref=e109]: Filing text and reporting history.
+            - button "Use SEC EDGAR Filing text and reporting history." [ref=e110] [cursor=pointer]:
+              - generic [ref=e111]: Enabled
+              - generic [ref=e112]: "On"
+          - generic [ref=e113]:
+            - generic [ref=e114]:
+              - generic [ref=e115]: Use CoinGecko
+              - generic [ref=e116]: Crypto pricing coverage.
+            - button "Use CoinGecko Crypto pricing coverage." [ref=e117] [cursor=pointer]:
+              - generic [ref=e118]: Enabled
+              - generic [ref=e119]: "On"
+          - generic [ref=e120]:
+            - generic [ref=e121]:
+              - generic [ref=e122]: Use Alpaca market data
+              - generic [ref=e123]: Requires Alpaca credentials.
+            - button "Use Alpaca market data Requires Alpaca credentials." [ref=e124] [cursor=pointer]:
+              - generic [ref=e125]: Disabled
+              - generic [ref=e126]: "Off"
+          - generic [ref=e127]:
+            - generic [ref=e128]:
+              - generic [ref=e129]: Use Finnhub
+              - generic [ref=e130]: News and sentiment coverage.
+            - button "Use Finnhub News and sentiment coverage." [ref=e131] [cursor=pointer]:
+              - generic [ref=e132]: Disabled
+              - generic [ref=e133]: "Off"
+          - generic [ref=e134]:
+            - generic [ref=e135]:
+              - generic [ref=e136]: Use Marketaux
+              - generic [ref=e137]: Entity-aware market news.
+            - button "Use Marketaux Entity-aware market news." [ref=e138] [cursor=pointer]:
+              - generic [ref=e139]: Disabled
+              - generic [ref=e140]: "Off"
+          - generic [ref=e141]:
+            - generic [ref=e142]:
+              - generic [ref=e143]: Use FMP
+              - generic [ref=e144]: Earnings surprises and analyst context.
+            - button "Use FMP Earnings surprises and analyst context." [ref=e145] [cursor=pointer]:
+              - generic [ref=e146]: Disabled
+              - generic [ref=e147]: "Off"
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - generic [ref=e150]: Use Reddit
+              - generic [ref=e151]: Reddit mention and sentiment sampling.
+            - button "Use Reddit Reddit mention and sentiment sampling." [ref=e152] [cursor=pointer]:
+              - generic [ref=e153]: Disabled
+              - generic [ref=e154]: "Off"
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - generic [ref=e157]: Use Polygon
+              - generic [ref=e158]: Premium market data.
+            - button "Use Polygon Premium market data." [ref=e159] [cursor=pointer]:
+              - generic [ref=e160]: Disabled
+              - generic [ref=e161]: "Off"
+          - generic [ref=e162]:
+            - generic [ref=e163]:
+              - generic [ref=e164]: Price cache TTL (minutes)
+              - generic [ref=e165]: How long to reuse price snapshots locally.
+            - spinbutton "Price cache TTL (minutes) How long to reuse price snapshots locally." [ref=e166]: "60"
+          - generic [ref=e167]:
+            - generic [ref=e168]:
+              - generic [ref=e169]: Fundamentals cache TTL (minutes)
+              - generic [ref=e170]: How long fundamentals stay fresh locally.
+            - spinbutton "Fundamentals cache TTL (minutes) How long fundamentals stay fresh locally." [ref=e171]: "1440"
+          - generic [ref=e172]:
+            - generic [ref=e173]:
+              - generic [ref=e174]: News cache TTL (minutes)
+              - generic [ref=e175]: Shorter values refresh sentiment faster.
+            - spinbutton "News cache TTL (minutes) Shorter values refresh sentiment faster." [ref=e176]: "30"
+          - generic [ref=e177]:
+            - generic [ref=e178]:
+              - generic [ref=e179]: Macro cache TTL (minutes)
+              - generic [ref=e180]: Longer values are usually fine for macro data.
+            - spinbutton "Macro cache TTL (minutes) Longer values are usually fine for macro data." [ref=e181]: "360"
+          - generic [ref=e182]:
+            - generic [ref=e183]:
+              - generic [ref=e184]: Max acceptable data age (minutes)
+              - generic [ref=e185]: Signals older than this get penalized.
+            - spinbutton "Max acceptable data age (minutes) Signals older than this get penalized." [ref=e186]: "60"
+          - generic [ref=e187]:
+            - generic [ref=e188]:
+              - generic [ref=e189]: Min data coverage
+              - generic [ref=e190]: Coverage floor before signals become unreliable.
+            - spinbutton "Min data coverage Coverage floor before signals become unreliable." [ref=e191]: "0.5"
+          - generic [ref=e192]:
+            - generic [ref=e193]:
+              - generic [ref=e194]: Alpaca plan override
+              - generic [ref=e195]: Use auto unless you intentionally want to override detected plan limits.
+            - combobox "Alpaca plan override Use auto unless you intentionally want to override detected plan limits." [ref=e196]:
+              - option "Auto detect" [selected]
+              - option "Free"
+              - option "Algo Trader Plus"
+              - option "Unlimited"
+        - generic [ref=e197]:
+          - generic [ref=e198]: No unsaved changes.
+          - generic [ref=e199]:
+            - button "Reset" [disabled] [ref=e200]
+            - button "Save changes" [disabled] [ref=e201]
+      - generic [ref=e202]:
+        - generic [ref=e204]:
+          - generic [ref=e205]: Settings
+          - heading "Agents" [level=3] [ref=e206]
+        - paragraph [ref=e207]: These defaults shape new strategy builds and how the research team weighs signals before the portfolio decision.
+        - generic [ref=e208]:
+          - generic [ref=e209]:
+            - generic [ref=e210]:
+              - generic [ref=e211]: Fundamentals agent
+              - generic [ref=e212]: Balance sheet and earnings context.
+            - button "Fundamentals agent Balance sheet and earnings context." [ref=e213] [cursor=pointer]:
+              - generic [ref=e214]: Enabled
+              - generic [ref=e215]: "On"
+          - generic [ref=e216]:
+            - generic [ref=e217]:
+              - generic [ref=e218]: Technicals agent
+              - generic [ref=e219]: Indicator-driven market structure.
+            - button "Technicals agent Indicator-driven market structure." [ref=e220] [cursor=pointer]:
+              - generic [ref=e221]: Enabled
+              - generic [ref=e222]: "On"
+          - generic [ref=e223]:
+            - generic [ref=e224]:
+              - generic [ref=e225]: Sentiment agent
+              - generic [ref=e226]: News, options, and Reddit sentiment.
+            - button "Sentiment agent News, options, and Reddit sentiment." [ref=e227] [cursor=pointer]:
+              - generic [ref=e228]: Enabled
+              - generic [ref=e229]: "On"
+          - generic [ref=e230]:
+            - generic [ref=e231]:
+              - generic [ref=e232]: Macro agent
+              - generic [ref=e233]: Rates, inflation, and regime analysis.
+            - button "Macro agent Rates, inflation, and regime analysis." [ref=e234] [cursor=pointer]:
+              - generic [ref=e235]: Enabled
+              - generic [ref=e236]: "On"
+          - generic [ref=e237]:
+            - generic [ref=e238]:
+              - generic [ref=e239]: Value agent
+              - generic [ref=e240]: Valuation and filing-based value lens.
+            - button "Value agent Valuation and filing-based value lens." [ref=e241] [cursor=pointer]:
+              - generic [ref=e242]: Enabled
+              - generic [ref=e243]: "On"
+          - generic [ref=e244]:
+            - generic [ref=e245]:
+              - generic [ref=e246]: Momentum agent
+              - generic [ref=e247]: Relative strength and trend persistence.
+            - button "Momentum agent Relative strength and trend persistence." [ref=e248] [cursor=pointer]:
+              - generic [ref=e249]: Enabled
+              - generic [ref=e250]: "On"
+          - generic [ref=e251]:
+            - generic [ref=e252]:
+              - generic [ref=e253]: Growth agent
+              - generic [ref=e254]: Growth quality and earnings surprise lens.
+            - button "Growth agent Growth quality and earnings surprise lens." [ref=e255] [cursor=pointer]:
+              - generic [ref=e256]: Enabled
+              - generic [ref=e257]: "On"
+          - generic [ref=e258]:
+            - generic [ref=e259]:
+              - generic [ref=e260]: Bull/bear debate
+              - generic [ref=e261]: Cross-check analysis before decisions.
+            - button "Bull/bear debate Cross-check analysis before decisions." [ref=e262] [cursor=pointer]:
+              - generic [ref=e263]: Enabled
+              - generic [ref=e264]: "On"
+          - generic [ref=e265]:
+            - generic [ref=e266]:
+              - generic [ref=e267]: Fundamentals weight
+              - generic [ref=e268]: Default weight inside signal aggregation.
+            - spinbutton "Fundamentals weight Default weight inside signal aggregation." [ref=e269]: "80"
+          - generic [ref=e270]:
+            - generic [ref=e271]:
+              - generic [ref=e272]: Technicals weight
+              - generic [ref=e273]: Default weight inside signal aggregation.
+            - spinbutton "Technicals weight Default weight inside signal aggregation." [ref=e274]: "60"
+          - generic [ref=e275]:
+            - generic [ref=e276]:
+              - generic [ref=e277]: Sentiment weight
+              - generic [ref=e278]: Default weight inside signal aggregation.
+            - spinbutton "Sentiment weight Default weight inside signal aggregation." [ref=e279]: "40"
+          - generic [ref=e280]:
+            - generic [ref=e281]:
+              - generic [ref=e282]: Macro weight
+              - generic [ref=e283]: Default weight inside signal aggregation.
+            - spinbutton "Macro weight Default weight inside signal aggregation." [ref=e284]: "70"
+          - generic [ref=e285]:
+            - generic [ref=e286]:
+              - generic [ref=e287]: Value weight
+              - generic [ref=e288]: Default weight inside signal aggregation.
+            - spinbutton "Value weight Default weight inside signal aggregation." [ref=e289]: "75"
+          - generic [ref=e290]:
+            - generic [ref=e291]:
+              - generic [ref=e292]: Momentum weight
+              - generic [ref=e293]: Default weight inside signal aggregation.
+            - spinbutton "Momentum weight Default weight inside signal aggregation." [ref=e294]: "55"
+          - generic [ref=e295]:
+            - generic [ref=e296]:
+              - generic [ref=e297]: Growth weight
+              - generic [ref=e298]: Default weight inside signal aggregation.
+            - spinbutton "Growth weight Default weight inside signal aggregation." [ref=e299]: "65"
+          - generic [ref=e300]:
+            - generic [ref=e301]:
+              - generic [ref=e302]: Minimum confidence threshold
+              - generic [ref=e303]: Below this, the risk manager can block action.
+            - spinbutton "Minimum confidence threshold Below this, the risk manager can block action." [ref=e304]: "0.55"
+          - generic [ref=e305]:
+            - generic [ref=e306]:
+              - generic [ref=e307]: Reddit lookback (hours)
+              - generic [ref=e308]: How far back the sentiment agent scans Reddit.
+            - spinbutton "Reddit lookback (hours) How far back the sentiment agent scans Reddit." [ref=e309]: "48"
+          - generic [ref=e310]:
+            - generic [ref=e311]:
+              - generic [ref=e312]: News lookback (days)
+              - generic [ref=e313]: How much recent news the sentiment agent considers.
+            - spinbutton "News lookback (days) How much recent news the sentiment agent considers." [ref=e314]: "7"
+        - generic [ref=e315]:
+          - generic [ref=e316]: No unsaved changes.
+          - generic [ref=e317]:
+            - button "Reset" [disabled] [ref=e318]
+            - button "Save changes" [disabled] [ref=e319]
+      - generic [ref=e320]:
+        - generic [ref=e322]:
+          - generic [ref=e323]: Settings
+          - heading "Backtesting" [level=3] [ref=e324]
+        - paragraph [ref=e325]: These defaults shape new backtests, not historical results you already stored.
+        - generic [ref=e326]:
+          - generic [ref=e327]:
+            - generic [ref=e328]:
+              - generic [ref=e329]: Default initial cash
+              - generic [ref=e330]: Starting capital for new backtests.
+            - spinbutton "Default initial cash Starting capital for new backtests." [ref=e331]: "100000"
+          - generic [ref=e332]:
+            - generic [ref=e333]:
+              - generic [ref=e334]: Default slippage %
+              - generic [ref=e335]: Execution friction applied in backtests.
+            - spinbutton "Default slippage % Execution friction applied in backtests." [ref=e336]: "0.1"
+          - generic [ref=e337]:
+            - generic [ref=e338]:
+              - generic [ref=e339]: Default commission %
+              - generic [ref=e340]: Broker fee assumption in backtests.
+            - spinbutton "Default commission % Broker fee assumption in backtests." [ref=e341]: "0"
+          - generic [ref=e342]:
+            - generic [ref=e343]:
+              - generic [ref=e344]: Default max position %
+              - generic [ref=e345]: Sizing ceiling used in new backtests.
+            - spinbutton "Default max position % Sizing ceiling used in new backtests." [ref=e346]: "5"
+          - generic [ref=e347]:
+            - generic [ref=e348]:
+              - generic [ref=e349]: Default lookback years
+              - generic [ref=e350]: Historical range used when starting a new test.
+            - spinbutton "Default lookback years Historical range used when starting a new test." [ref=e351]: "3"
+          - generic [ref=e352]:
+            - generic [ref=e353]:
+              - generic [ref=e354]: Enable walk-forward by default
+              - generic [ref=e355]: Turn rolling validation on for new runs.
+            - button "Enable walk-forward by default Turn rolling validation on for new runs." [ref=e356] [cursor=pointer]:
+              - generic [ref=e357]: Disabled
+              - generic [ref=e358]: "Off"
+          - generic [ref=e359]:
+            - generic [ref=e360]:
+              - generic [ref=e361]: Walk-forward window (months)
+              - generic [ref=e362]: Training window length for walk-forward tests.
+            - spinbutton "Walk-forward window (months) Training window length for walk-forward tests." [ref=e363]: "3"
+          - generic [ref=e364]:
+            - generic [ref=e365]:
+              - generic [ref=e366]: Show costs separately
+              - generic [ref=e367]: Keep transaction costs isolated in result summaries.
+            - button "Show costs separately Keep transaction costs isolated in result summaries." [ref=e368] [cursor=pointer]:
+              - generic [ref=e369]: Enabled
+              - generic [ref=e370]: "On"
+        - generic [ref=e371]:
+          - generic [ref=e372]: No unsaved changes.
+          - generic [ref=e373]:
+            - button "Reset" [disabled] [ref=e374]
+            - button "Save changes" [disabled] [ref=e375]
+      - generic [ref=e376]:
+        - generic [ref=e378]:
+          - generic [ref=e379]: Settings
+          - heading "Guardrails" [level=3] [ref=e380]
+        - paragraph [ref=e381]: Guardrails are still clamped server-side, so unsafe values will not persist even if you try to raise them too high.
+        - generic [ref=e382]:
+          - generic [ref=e383]:
+            - generic [ref=e384]:
+              - generic [ref=e385]: Max position %
+              - generic [ref=e386]: Largest single position allowed.
+            - spinbutton "Max position % Largest single position allowed." [ref=e387]: "5"
+          - generic [ref=e388]:
+            - generic [ref=e389]:
+              - generic [ref=e390]: Max sector %
+              - generic [ref=e391]: Largest sector concentration allowed.
+            - spinbutton "Max sector % Largest sector concentration allowed." [ref=e392]: "30"
+          - generic [ref=e393]:
+            - generic [ref=e394]:
+              - generic [ref=e395]: Max open positions
+              - generic [ref=e396]: Maximum number of concurrent holdings.
+            - spinbutton "Max open positions Maximum number of concurrent holdings." [ref=e397]: "10"
+          - generic [ref=e398]:
+            - generic [ref=e399]:
+              - generic [ref=e400]: Max daily loss %
+              - generic [ref=e401]: Daily loss breaker threshold.
+            - spinbutton "Max daily loss % Daily loss breaker threshold." [ref=e402]: "3"
+          - generic [ref=e403]:
+            - generic [ref=e404]:
+              - generic [ref=e405]: Max weekly drawdown %
+              - generic [ref=e406]: Weekly drawdown breaker threshold.
+            - spinbutton "Max weekly drawdown % Weekly drawdown breaker threshold." [ref=e407]: "7"
+          - generic [ref=e408]:
+            - generic [ref=e409]:
+              - generic [ref=e410]: Max total drawdown %
+              - generic [ref=e411]: Portfolio-level drawdown breaker threshold.
+            - spinbutton "Max total drawdown % Portfolio-level drawdown breaker threshold." [ref=e412]: "20"
+          - generic [ref=e413]:
+            - generic [ref=e414]:
+              - generic [ref=e415]: Auto-confirm max USD
+              - generic [ref=e416]: Semi-auto orders below this can execute automatically.
+            - spinbutton "Auto-confirm max USD Semi-auto orders below this can execute automatically." [ref=e417]: "100"
+          - generic [ref=e418]:
+            - generic [ref=e419]:
+              - generic [ref=e420]: Max trades per day
+              - generic [ref=e421]: Daily trade-count limiter.
+            - spinbutton "Max trades per day Daily trade-count limiter." [ref=e422]: "5"
+          - generic [ref=e423]:
+            - generic [ref=e424]:
+              - generic [ref=e425]: Trading hours only
+              - generic [ref=e426]: Restrict execution to regular market hours.
+            - button "Trading hours only Restrict execution to regular market hours." [ref=e427] [cursor=pointer]:
+              - generic [ref=e428]: Enabled
+              - generic [ref=e429]: "On"
+          - generic [ref=e430]:
+            - generic [ref=e431]:
+              - generic [ref=e432]: Max data age (minutes)
+              - generic [ref=e433]: If inputs are older than this, execution confidence is penalized.
+            - spinbutton "Max data age (minutes) If inputs are older than this, execution confidence is penalized." [ref=e434]: "60"
+        - generic [ref=e435]:
+          - generic [ref=e436]: No unsaved changes.
+          - generic [ref=e437]:
+            - button "Reset" [disabled] [ref=e438]
+            - button "Save changes" [disabled] [ref=e439]
+      - generic [ref=e440]:
+        - generic [ref=e442]:
+          - generic [ref=e443]: Settings
+          - heading "Notifications" [level=3] [ref=e444]
+        - paragraph [ref=e445]: Browser notifications are the only notification channel exposed in the app right now.
+        - generic [ref=e446]:
+          - generic [ref=e447]:
+            - generic [ref=e448]:
+              - generic [ref=e449]: Browser notifications
+              - generic [ref=e450]: Allow in-app browser notifications.
+            - button "Browser notifications Allow in-app browser notifications." [ref=e451] [cursor=pointer]:
+              - generic [ref=e452]: Enabled
+              - generic [ref=e453]: "On"
+          - generic [ref=e454]:
+            - generic [ref=e455]:
+              - generic [ref=e456]: Notify on trade execution
+              - generic [ref=e457]: Push an alert after each execution.
+            - button "Notify on trade execution Push an alert after each execution." [ref=e458] [cursor=pointer]:
+              - generic [ref=e459]: Enabled
+              - generic [ref=e460]: "On"
+          - generic [ref=e461]:
+            - generic [ref=e462]:
+              - generic [ref=e463]: Notify on circuit breaker
+              - generic [ref=e464]: Alert when a risk breaker trips.
+            - button "Notify on circuit breaker Alert when a risk breaker trips." [ref=e465] [cursor=pointer]:
+              - generic [ref=e466]: Enabled
+              - generic [ref=e467]: "On"
+          - generic [ref=e468]:
+            - generic [ref=e469]:
+              - generic [ref=e470]: Daily summary notifications
+              - generic [ref=e471]: Send a local end-of-day recap.
+            - button "Daily summary notifications Send a local end-of-day recap." [ref=e472] [cursor=pointer]:
+              - generic [ref=e473]: Enabled
+              - generic [ref=e474]: "On"
+          - generic [ref=e475]:
+            - generic [ref=e476]:
+              - generic [ref=e477]: Paper milestone notifications
+              - generic [ref=e478]: Notify when paper-trading milestones are reached.
+            - button "Paper milestone notifications Notify when paper-trading milestones are reached." [ref=e479] [cursor=pointer]:
+              - generic [ref=e480]: Enabled
+              - generic [ref=e481]: "On"
+        - generic [ref=e482]:
+          - generic [ref=e483]: No unsaved changes.
+          - generic [ref=e484]:
+            - button "Reset" [disabled] [ref=e485]
+            - button "Save changes" [disabled] [ref=e486]
+      - generic [ref=e487]:
+        - generic [ref=e489]:
+          - generic [ref=e490]: Settings
+          - heading "System" [level=3] [ref=e491]
+        - paragraph [ref=e492]: System path and port changes are persisted immediately but usually take effect the next time you start the app.
+        - generic [ref=e493]:
+          - generic [ref=e494]:
+            - generic [ref=e495]:
+              - generic [ref=e496]: Backend port
+              - generic [ref=e497]: Port the local API binds to on next run.
+            - spinbutton "Backend port Port the local API binds to on next run." [ref=e498]: "8000"
+          - generic [ref=e499]:
+            - generic [ref=e500]:
+              - generic [ref=e501]: Frontend port
+              - generic [ref=e502]: Port the web app uses on next run.
+            - spinbutton "Frontend port Port the web app uses on next run." [ref=e503]: "5173"
+          - generic [ref=e504]:
+            - generic [ref=e505]:
+              - generic [ref=e506]: Database path
+              - generic [ref=e507]: SQLite file used for local state and audit history.
+            - textbox "Database path SQLite file used for local state and audit history." [ref=e508]:
+              - /placeholder: ./data/finpilot.db
+              - text: CA
+          - generic [ref=e509]:
+            - generic [ref=e510]:
+              - generic [ref=e511]: Cache directory
+              - generic [ref=e512]: Directory for local cache files.
+            - textbox "Cache directory Directory for local cache files." [ref=e513]:
+              - /placeholder: ./data/cache
+              - text: data/cache
+          - generic [ref=e514]:
+            - generic [ref=e515]:
+              - generic [ref=e516]: Artifacts directory
+              - generic [ref=e517]: Where backtest artifacts are stored.
+            - textbox "Artifacts directory Where backtest artifacts are stored." [ref=e518]:
+              - /placeholder: ./data/artifacts
+              - text: data/artifacts
+          - generic [ref=e519]:
+            - generic [ref=e520]:
+              - generic [ref=e521]: Audit log path
+              - generic [ref=e522]: Flat-file audit log location.
+            - textbox "Audit log path Flat-file audit log location." [ref=e523]:
+              - /placeholder: ./data/audit.log
+              - text: data/audit.log
+          - generic [ref=e524]:
+            - generic [ref=e525]:
+              - generic [ref=e526]: Debug logging
+              - generic [ref=e527]: Expose more verbose local logs.
+            - button "Debug logging Expose more verbose local logs." [ref=e528] [cursor=pointer]:
+              - generic [ref=e529]: Disabled
+              - generic [ref=e530]: "Off"
+        - generic [ref=e531]:
+          - generic [ref=e532]: No unsaved changes.
+          - generic [ref=e533]:
+            - button "Reset" [disabled] [ref=e534]
+            - button "Save changes" [disabled] [ref=e535]

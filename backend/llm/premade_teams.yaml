@@ -1,0 +1,998 @@
+catalog_version: "1.0.0"
+default_team_id: "balanced-core"
+featured_team_ids:
+  - "balanced-core"
+  - "beginner-baseline"
+  - "macro-aware"
+hidden_team_ids:
+  - "contrarian"
+  - "event-driven-sentiment"
+  - "recession-defense"
+  - "broad-exploratory"
+  - "benchmark-experimental"
+
+teams:
+  # ── Featured ────────────────────────────────────────────────────────────
+
+  - team_id: "balanced-core"
+    display_name: "Balanced Core"
+    description: "Even-weighted multi-factor equity analysis across fundamentals, macro, and technical signals — no dominant style tilt."
+    target_user: "Investor who wants a reasonable starting point without a strong style preference, or who is new to the system."
+    suitable_for:
+      - "build me a balanced team"
+      - "default setup"
+      - "no strong preference"
+      - "where do I start"
+    risk_level: "moderate"
+    time_horizon: "medium"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 78
+      technicals: 55
+      sentiment: 25
+      macro: 70
+      value: 72
+      momentum: 58
+      growth: 66
+    agent_variants:
+      fundamentals: "balanced"
+      technicals: "balanced"
+      sentiment: "skeptical_filter"
+      macro: "balanced"
+      value: "balanced"
+      momentum: "balanced"
+      growth: "balanced"
+    team_overrides:
+      min_confidence_threshold: 0.55
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "beginner"
+    is_default: true
+    is_featured: true
+    is_hidden: false
+    why_distinct: "Reference baseline — no style tilt. All diffs are measured against this team."
+    known_limitations:
+      - "No style tilt means it may give muddled signals in strongly factor-driven regimes."
+      - "Sentiment weight is kept low by design to reduce noise."
+    not_for:
+      - "Investors who already know they want a value, growth, or momentum mandate."
+
+  - team_id: "beginner-baseline"
+    display_name: "Beginner Safe Baseline"
+    description: "Simplified team focused on fundamental quality and macro context — sentiment and momentum de-weighted to reduce noise for new users."
+    target_user: "Investor new to systematic analysis who wants a clean, understandable starting point with fewer competing signals."
+    suitable_for:
+      - "getting started"
+      - "beginner"
+      - "simple"
+      - "easy to understand"
+      - "first time"
+      - "not sure where to start"
+    risk_level: "conservative"
+    time_horizon: "long"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 80
+      technicals: 30
+      sentiment: 15
+      macro: 65
+      value: 78
+      momentum: 22
+      growth: 55
+    agent_variants:
+      fundamentals: "quality_compounder"
+      technicals: "balanced"
+      sentiment: "skeptical_filter"
+      macro: "balanced"
+      value: "balanced"
+      momentum: "balanced"
+      growth: "quality_compounder"
+    team_overrides:
+      min_confidence_threshold: 0.58
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "beginner"
+    is_default: false
+    is_featured: true
+    is_hidden: false
+    why_distinct: "Lowest sentiment (15) and momentum (22) weights in catalog — by design. All balanced variants minimizes output complexity. Conservative + long horizon reduces urgent signals."
+    known_limitations:
+      - "Systematically underweights technical and momentum signals that matter for near-term performance."
+      - "Not suitable for active management or short-term setups."
+    not_for:
+      - "Active traders."
+      - "Short-horizon mandates."
+      - "Investors who need momentum or sentiment insights."
+
+  - team_id: "macro-aware"
+    display_name: "Macro-Aware"
+    description: "Gives the macro regime outsized influence on conclusions — treats rates, inflation, and growth cycle as the primary filter for stock selection."
+    target_user: "Macro-informed investor who believes top-down regime context should gate bottom-up stock selection."
+    suitable_for:
+      - "macro"
+      - "top-down"
+      - "rates environment"
+      - "inflation"
+      - "dalio"
+      - "macro hedge fund style"
+      - "regime investing"
+    risk_level: "moderate"
+    time_horizon: "medium"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 70
+      technicals: 42
+      sentiment: 28
+      macro: 90
+      value: 60
+      momentum: 50
+      growth: 55
+    agent_variants:
+      fundamentals: "balanced"
+      technicals: "balanced"
+      sentiment: "skeptical_filter"
+      macro: "dalio_all_weather"
+      value: "balanced"
+      momentum: "balanced"
+      growth: "balanced"
+    team_overrides:
+      min_confidence_threshold: 0.55
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "intermediate"
+    is_default: false
+    is_featured: true
+    is_hidden: false
+    why_distinct: "Highest macro weight (90) in catalog; dalio_all_weather creates a four-quadrant regime framing that no other team uses as a primary signal."
+    known_limitations:
+      - "Macro regime signals have long lead times and can be wrong for extended periods."
+      - "Individual stock selection remains bottom-up — macro is a gate, not a replacement."
+    not_for:
+      - "Stock-pickers who find macro noise."
+      - "Short-horizon tactical setups where macro is irrelevant."
+
+  # ── Regular ──────────────────────────────────────────────────────────────
+
+  - team_id: "deep-value"
+    display_name: "Deep Value"
+    description: "Graham-style value screening — requires multiple valuation ratios to indicate cheapness and penalizes leverage heavily."
+    target_user: "Patient investor seeking undervalued stocks, comfortable with long hold periods, who prioritizes downside protection over upside capture."
+    suitable_for:
+      - "value investing"
+      - "cheap stocks"
+      - "graham"
+      - "margin of safety"
+      - "undervalued"
+      - "contrarian value"
+    risk_level: "conservative"
+    time_horizon: "long"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 85
+      technicals: 20
+      sentiment: 15
+      macro: 55
+      value: 92
+      momentum: 20
+      growth: 35
+    agent_variants:
+      fundamentals: "graham_deep_value"
+      technicals: "mean_reversion"
+      sentiment: "skeptical_filter"
+      macro: "marks_cycle_watch"
+      value: "graham_margin_of_safety"
+      momentum: "balanced"
+      growth: "balanced"
+    team_overrides:
+      min_confidence_threshold: 0.58
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "beginner"
+    is_default: false
+    is_featured: false
+    is_hidden: false
+    why_distinct: "Highest value weight in catalog (92). Graham variants on both fundamentals and value agents. Sentiment nearly disabled (15). marks_cycle_watch adds cycle awareness for timing."
+    known_limitations:
+      - "Will systematically underweight high-quality compounders that are never statistically cheap."
+      - "May miss long stretches in growth-dominant or momentum-driven markets."
+    not_for:
+      - "Investors seeking near-term momentum or growth returns."
+      - "Aggressive risk tolerances."
+
+  - team_id: "quality-compounder"
+    display_name: "Quality Compounder"
+    description: "Targets companies with durable competitive advantages — consistent high ROE, expanding margins, low reinvestment requirements — held for the long term."
+    target_user: "Long-term investor who thinks like a business owner; prefers resilient compounding businesses over cheap or speculative names."
+    suitable_for:
+      - "quality stocks"
+      - "buffett style"
+      - "moat"
+      - "compounders"
+      - "long-term ownership"
+      - "high ROE"
+    risk_level: "conservative"
+    time_horizon: "long"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 88
+      technicals: 25
+      sentiment: 18
+      macro: 58
+      value: 82
+      momentum: 35
+      growth: 72
+    agent_variants:
+      fundamentals: "buffett_moat"
+      technicals: "balanced"
+      sentiment: "skeptical_filter"
+      macro: "balanced"
+      value: "buffett_quality_value"
+      momentum: "balanced"
+      growth: "quality_compounder"
+    team_overrides:
+      min_confidence_threshold: 0.58
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "beginner"
+    is_default: false
+    is_featured: false
+    is_hidden: false
+    why_distinct: "Three quality-aligned variants (buffett_moat + buffett_quality_value + quality_compounder growth) creating consistent quality primacy. FCF and ROE are the shared primary signals."
+    known_limitations:
+      - "Will miss companies with excellent growth but no established moat."
+      - "May undervalue early-cycle expansion plays or companies still building their competitive position."
+    not_for:
+      - "Investors seeking short-term performance."
+      - "Growth investors tolerating high valuations."
+
+  - team_id: "garp"
+    display_name: "GARP — Growth at a Reasonable Price"
+    description: "Seeks companies with above-average earnings growth trading at fair — not expensive — valuations."
+    target_user: "Investor who finds pure value too slow and pure growth too risky; wants the growth-value middle ground."
+    suitable_for:
+      - "GARP"
+      - "growth at reasonable price"
+      - "lynch"
+      - "growth stocks that aren't overpriced"
+      - "balanced growth value"
+    risk_level: "moderate"
+    time_horizon: "medium"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 80
+      technicals: 40
+      sentiment: 28
+      macro: 55
+      value: 68
+      momentum: 50
+      growth: 85
+    agent_variants:
+      fundamentals: "lynch_garp"
+      technicals: "balanced"
+      sentiment: "balanced"
+      macro: "balanced"
+      value: "balanced"
+      momentum: "balanced"
+      growth: "lynch_garp"
+    team_overrides:
+      min_confidence_threshold: 0.55
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "beginner"
+    is_default: false
+    is_featured: false
+    is_hidden: false
+    why_distinct: "Growth is highest-weight agent (85). Both fundamentals and growth use lynch_garp variant. Value (68) acts as a valuation ceiling, not a primary screen."
+    known_limitations:
+      - "GARP filtering is done at the prompt level, not with a hard PEG ratio cutoff."
+      - "Results depend on model interpretation of growth-vs-valuation reasonableness."
+    not_for:
+      - "Strict value investors."
+      - "Pure momentum investors."
+      - "Aggressive high-multiple growth mandates."
+
+  - team_id: "high-growth"
+    display_name: "High Growth"
+    description: "Aggressive growth mandate — prioritizes revenue acceleration and earnings expansion over valuation discipline."
+    target_user: "Investor targeting high-growth companies willing to accept valuation risk and volatility in exchange for above-market growth capture."
+    suitable_for:
+      - "aggressive growth"
+      - "fast growing companies"
+      - "revenue growth"
+      - "earnings acceleration"
+      - "growth stocks"
+    risk_level: "aggressive"
+    time_horizon: "medium"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 62
+      technicals: 55
+      sentiment: 42
+      macro: 40
+      value: 28
+      momentum: 65
+      growth: 92
+    agent_variants:
+      fundamentals: "lynch_garp"
+      technicals: "balanced"
+      sentiment: "balanced"
+      macro: "risk_on_risk_off"
+      value: "balanced"
+      momentum: "balanced"
+      growth: "fisher_quality_growth"
+    team_overrides:
+      min_confidence_threshold: 0.50
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "intermediate"
+    is_default: false
+    is_featured: false
+    is_hidden: false
+    why_distinct: "Highest growth weight (92) in catalog. Lowest value weight (28) in any team where value isn't disabled. macro:risk_on_risk_off gates regime — will be cautious in confirmed risk-off."
+    known_limitations:
+      - "Will perform poorly in value-rotation or rate-rising regimes."
+      - "No valuation ceiling — can confirm expensive growth stocks."
+      - "fisher_quality_growth requires margin expansion, so may exclude early-stage hyper-growers."
+    not_for:
+      - "Conservative or moderate investors."
+      - "Dividend-seekers."
+      - "Capital preservation mandates."
+
+  - team_id: "momentum-leader"
+    display_name: "Momentum Leader"
+    description: "Identifies stocks with sustained market leadership — price outperformance vs SPY, strong relative strength, confirmed by volume."
+    target_user: "Investor following a relative-strength discipline — buy strength, avoid weakness, focus on what's actually working now."
+    suitable_for:
+      - "momentum"
+      - "relative strength"
+      - "leading stocks"
+      - "buy what's working"
+      - "market leaders"
+      - "canslim"
+    risk_level: "aggressive"
+    time_horizon: "short"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 38
+      technicals: 80
+      sentiment: 42
+      macro: 42
+      value: 18
+      momentum: 90
+      growth: 50
+    agent_variants:
+      fundamentals: "balanced"
+      technicals: "oneil_breakout"
+      sentiment: "crowd_momentum"
+      macro: "risk_on_risk_off"
+      value: "balanced"
+      momentum: "oneil_leader_tracking"
+      growth: "balanced"
+    team_overrides:
+      min_confidence_threshold: 0.50
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "intermediate"
+    is_default: false
+    is_featured: false
+    is_hidden: false
+    why_distinct: "Highest momentum weight (90). Consistent CANSLIM-adjacent framing through oneil_breakout + oneil_leader_tracking. macro:risk_on_risk_off prevents confirming momentum in confirmed risk-off regimes."
+    known_limitations:
+      - "Strong recency bias — will lag badly in mean-reverting or value-rotating markets."
+      - "sentiment:crowd_momentum can amplify noise in social-media-driven environments."
+    not_for:
+      - "Long-horizon investors."
+      - "Conservative or moderate risk tolerances."
+      - "Fundamental or valuation-first mandates."
+
+  - team_id: "trend-template"
+    display_name: "Trend Template"
+    description: "Strict price trend qualification — stocks must clear all trend-template conditions before being considered; rejects everything not in a confirmed Stage 2 uptrend."
+    target_user: "Disciplined technical trader who wants a strict entry filter that applies uniform trend quality criteria before acting."
+    suitable_for:
+      - "trend following"
+      - "minervini"
+      - "trend template"
+      - "stage 2 uptrend"
+      - "strict technical discipline"
+    risk_level: "aggressive"
+    time_horizon: "short"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 30
+      technicals: 88
+      sentiment: 32
+      macro: 38
+      value: 15
+      momentum: 85
+      growth: 48
+    agent_variants:
+      fundamentals: "balanced"
+      technicals: "minervini_trend_template"
+      sentiment: "skeptical_filter"
+      macro: "balanced"
+      value: "balanced"
+      momentum: "minervini_breakout_quality"
+      growth: "balanced"
+    team_overrides:
+      min_confidence_threshold: 0.55
+      enable_bull_bear_debate: false
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "advanced"
+    is_default: false
+    is_featured: false
+    is_hidden: false
+    why_distinct: "Only team combining minervini_trend_template + minervini_breakout_quality. Highest technicals weight (88). Value minimized (15). Bull/bear debate disabled — strict filter logic doesn't benefit from debate framing."
+    known_limitations:
+      - "Extremely selective — will reject most stocks."
+      - "Performs poorly in choppy or range-bound markets."
+      - "Short horizon bias means it is not useful for portfolio construction."
+    not_for:
+      - "Long-term investors."
+      - "Value or fundamental mandates."
+      - "Conservative risk tolerances."
+
+  - team_id: "dividend-income"
+    display_name: "Dividend Income"
+    description: "Income-focused mandate — sustainable yield, dividend growth history, and FCF coverage are the primary screens."
+    target_user: "Income investor seeking reliable dividend payments with modest capital appreciation; retiree-adjacent profile."
+    suitable_for:
+      - "dividends"
+      - "income investing"
+      - "yield"
+      - "dividend growth"
+      - "dividend aristocrats"
+      - "income portfolio"
+    risk_level: "conservative"
+    time_horizon: "long"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 80
+      technicals: 22
+      sentiment: 18
+      macro: 52
+      value: 90
+      momentum: 25
+      growth: 45
+    agent_variants:
+      fundamentals: "quality_compounder"
+      technicals: "balanced"
+      sentiment: "skeptical_filter"
+      macro: "rates_regime"
+      value: "dividend_steward"
+      momentum: "balanced"
+      growth: "quality_compounder"
+    team_overrides:
+      min_confidence_threshold: 0.58
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "beginner"
+    is_default: false
+    is_featured: false
+    is_hidden: false
+    why_distinct: "Highest value weight (90) in dividend variant. Only team using macro:rates_regime as primary macro variant — dividends are directly affected by rate environment. value:dividend_steward + fundamentals:quality_compounder creates consistent income + stability framing."
+    known_limitations:
+      - "Will underweight high-growth no-dividend names entirely."
+      - "rates_regime macro variant adds rate sensitivity that may reduce scores in rising rate environments — this is intentional, not a bug."
+    not_for:
+      - "Total return mandates."
+      - "Growth investors."
+      - "Aggressive risk tolerances."
+
+  - team_id: "defensive-low-vol"
+    display_name: "Defensive Low-Volatility"
+    description: "Prioritizes financial stability and low economic sensitivity — quality balance sheets, macro regime awareness, minimal momentum and sentiment exposure."
+    target_user: "Risk-averse investor who prioritizes not losing money over maximizing gains; USMV/QUAL ETF analog in active form."
+    suitable_for:
+      - "defensive"
+      - "low volatility"
+      - "stability"
+      - "safe stocks"
+      - "quality defensive"
+      - "conservative equity"
+    risk_level: "conservative"
+    time_horizon: "medium"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 85
+      technicals: 22
+      sentiment: 15
+      macro: 85
+      value: 78
+      momentum: 18
+      growth: 42
+    agent_variants:
+      fundamentals: "quality_compounder"
+      technicals: "balanced"
+      sentiment: "skeptical_filter"
+      macro: "dalio_all_weather"
+      value: "balance_sheet_discipline"
+      momentum: "balanced"
+      growth: "quality_compounder"
+    team_overrides:
+      min_confidence_threshold: 0.58
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "beginner"
+    is_default: false
+    is_featured: false
+    is_hidden: false
+    why_distinct: "Dual highest-weight position (F:85, M:85) on quality/stability agents. Lowest momentum weight (18) in catalog — intentional. value:balance_sheet_discipline emphasizes financial fortress over cheapness."
+    known_limitations:
+      - "Will systematically miss high-momentum growth stocks."
+      - "Underperforms in aggressive bull markets."
+    not_for:
+      - "Investors seeking market-beating returns in growth or momentum regimes."
+      - "Aggressive risk tolerances."
+
+  - team_id: "inflation-aware"
+    display_name: "Inflation-Aware"
+    description: "Positions analysis to account for elevated inflation and rate sensitivity — weights rate environment, FCF, and dividend yield prominently."
+    target_user: "Investor navigating a high-inflation, high-rate environment who wants to assess duration risk and find real-return-positive equities."
+    suitable_for:
+      - "inflation"
+      - "rising rates"
+      - "rate sensitive"
+      - "real returns"
+      - "inflation hedge equities"
+      - "dividend in inflation"
+    risk_level: "moderate"
+    time_horizon: "medium"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 72
+      technicals: 38
+      sentiment: 22
+      macro: 88
+      value: 72
+      momentum: 48
+      growth: 42
+    agent_variants:
+      fundamentals: "quality_compounder"
+      technicals: "balanced"
+      sentiment: "skeptical_filter"
+      macro: "rates_regime"
+      value: "dividend_steward"
+      momentum: "balanced"
+      growth: "balanced"
+    team_overrides:
+      min_confidence_threshold: 0.58
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "intermediate"
+    is_default: false
+    is_featured: false
+    is_hidden: false
+    why_distinct: "Only team using macro:rates_regime with a general (non-income) mandate. Distinct from dividend-income because value is not the primary — macro is (88). Designed for regime navigation, not income generation."
+    known_limitations:
+      - "rates_regime focuses on rate level and direction, not on sector-level inflation pass-through ability."
+      - "May undervalue companies with strong pricing power in non-dividend sectors."
+    not_for:
+      - "Pure growth investors."
+      - "Anyone indifferent to rates."
+      - "Short-horizon mandates."
+
+  # ── Hidden (Show More) ──────────────────────────────────────────────────
+
+  - team_id: "contrarian"
+    display_name: "Contrarian"
+    description: "Seeks extreme negative sentiment as a potential positive signal — looks for hated, washed-out stocks where sentiment may have overshot fundamentals."
+    target_user: "Contrarian investor who actively seeks the consensus view to fade; comfortable with volatility and timing uncertainty."
+    suitable_for:
+      - "contrarian"
+      - "hated stocks"
+      - "sentiment reversal"
+      - "fading the crowd"
+      - "oversold recovery"
+    risk_level: "moderate"
+    time_horizon: "medium"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 75
+      technicals: 42
+      sentiment: 75
+      macro: 55
+      value: 80
+      momentum: 32
+      growth: 45
+    agent_variants:
+      fundamentals: "graham_deep_value"
+      technicals: "mean_reversion"
+      sentiment: "contrarian_reset"
+      macro: "marks_cycle_watch"
+      value: "graham_margin_of_safety"
+      momentum: "balanced"
+      growth: "balanced"
+    team_overrides:
+      min_confidence_threshold: 0.55
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "advanced"
+    is_default: false
+    is_featured: false
+    is_hidden: true
+    why_distinct: "Only team where high sentiment weight (75) is combined with contrarian_reset — negative sentiment is the positive signal. technicals:mean_reversion provides timing complement. Graham variants ensure a fundamental floor."
+    known_limitations:
+      - "Contrarian signals can be early by months or years."
+      - "Sentiment reversal is not the same as fundamental recovery."
+    not_for:
+      - "Momentum investors."
+      - "Short-horizon mandates."
+      - "Conservative investors who cannot tolerate drawdown."
+
+  - team_id: "event-driven-sentiment"
+    display_name: "Event-Driven"
+    description: "Responds to catalysts — earnings surprises, announcements, and macro events — by weighting recent news and sentiment heavily."
+    target_user: "Active investor looking for near-term catalyst plays where headlines and options positioning reveal directional opportunities."
+    suitable_for:
+      - "event driven"
+      - "catalyst"
+      - "earnings play"
+      - "news driven"
+      - "short term sentiment"
+      - "options flow"
+    risk_level: "aggressive"
+    time_horizon: "short"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 50
+      technicals: 65
+      sentiment: 88
+      macro: 38
+      value: 28
+      momentum: 62
+      growth: 50
+    agent_variants:
+      fundamentals: "balanced"
+      technicals: "oneil_breakout"
+      sentiment: "event_driven"
+      macro: "risk_on_risk_off"
+      value: "balanced"
+      momentum: "oneil_leader_tracking"
+      growth: "earnings_revision"
+    team_overrides:
+      min_confidence_threshold: 0.50
+      enable_bull_bear_debate: false
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "advanced"
+    is_default: false
+    is_featured: false
+    is_hidden: true
+    why_distinct: "Highest sentiment weight in catalog (88) in event_driven variant. Only team combining event_driven + earnings_revision + oneil_breakout. Bull/bear debate disabled — short-horizon events don't benefit from debate framing."
+    known_limitations:
+      - "High noise-to-signal ratio; not suitable for any holding period beyond weeks."
+      - "event_driven uses a very short news lookback window and will miss slower-moving developments."
+    not_for:
+      - "Long-term investors."
+      - "Value mandates."
+      - "Conservative or moderate risk tolerances."
+
+  - team_id: "recession-defense"
+    display_name: "Recession Defense"
+    description: "Explicitly positioned for late-cycle or recessionary environments — maximizes macro awareness and minimizes cyclical sector exposure."
+    target_user: "Investor who believes a recession is near or in progress and wants the portfolio oriented defensively."
+    suitable_for:
+      - "recession"
+      - "bear market"
+      - "defensive positioning"
+      - "late cycle"
+      - "macro deterioration"
+      - "capital protection in downturn"
+    risk_level: "conservative"
+    time_horizon: "medium"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 82
+      technicals: 22
+      sentiment: 22
+      macro: 92
+      value: 75
+      momentum: 15
+      growth: 22
+    agent_variants:
+      fundamentals: "quality_compounder"
+      technicals: "balanced"
+      sentiment: "skeptical_filter"
+      macro: "marks_cycle_watch"
+      value: "balance_sheet_discipline"
+      momentum: "balanced"
+      growth: "balanced"
+    team_overrides:
+      min_confidence_threshold: 0.60
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors:
+      - "consumer_discretionary"
+      - "communication_services"
+    complexity: "intermediate"
+    is_default: false
+    is_featured: false
+    is_hidden: true
+    why_distinct: "Highest macro weight in catalog (92) in marks_cycle_watch variant. Only team with explicit sector exclusions in base definition. Lowest combined growth+momentum weights."
+    known_limitations:
+      - "Will underperform badly in early-cycle recovery."
+      - "Sector exclusions are blunt instruments that may exclude specific defensive names in those sectors."
+    not_for:
+      - "Bull market investors."
+      - "Growth mandates."
+      - "Anyone not specifically positioning for a downturn."
+
+  - team_id: "broad-exploratory"
+    display_name: "Broad Exploratory Blend"
+    description: "Near-equal weights across all seven agents with all balanced variants — maximum catalog coverage, minimum style tilt."
+    target_user: "Researcher or power user who wants to see all signal dimensions without bias; useful for learning what each agent contributes."
+    suitable_for:
+      - "show me everything"
+      - "test the system"
+      - "what do all agents say"
+      - "explore"
+      - "compare all factors"
+    risk_level: "moderate"
+    time_horizon: "medium"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 70
+      technicals: 70
+      sentiment: 65
+      macro: 70
+      value: 70
+      momentum: 70
+      growth: 70
+    agent_variants:
+      fundamentals: "balanced"
+      technicals: "balanced"
+      sentiment: "balanced"
+      macro: "balanced"
+      value: "balanced"
+      momentum: "balanced"
+      growth: "balanced"
+    team_overrides:
+      min_confidence_threshold: 0.55
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "intermediate"
+    is_default: false
+    is_featured: false
+    is_hidden: true
+    why_distinct: "Only team with near-equal weights across all agents and all balanced variants. Designed for exploration and comparison, not production use."
+    known_limitations:
+      - "Deliberately lacks opinion — equal weighting means internal conflicts are common."
+      - "Not optimized for any particular investing outcome."
+    not_for:
+      - "Investors who want a clear actionable recommendation."
+      - "Production portfolios."
+
+  - team_id: "benchmark-experimental"
+    display_name: "Benchmark-Aware Experimental"
+    description: "Uses relative-strength-first momentum alongside balanced fundamentals — explicitly frames all signals against benchmark-relative performance."
+    target_user: "Investor who cares about beating SPY specifically and wants the team oriented toward benchmark-relative alpha generation."
+    suitable_for:
+      - "beat the S&P"
+      - "relative performance"
+      - "alpha"
+      - "benchmark-relative"
+      - "systematic equity selection"
+      - "factor experiment"
+    risk_level: "aggressive"
+    time_horizon: "medium"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 72
+      technicals: 62
+      sentiment: 30
+      macro: 55
+      value: 55
+      momentum: 80
+      growth: 65
+    agent_variants:
+      fundamentals: "balanced"
+      technicals: "balanced"
+      sentiment: "skeptical_filter"
+      macro: "risk_on_risk_off"
+      value: "balanced"
+      momentum: "relative_strength_purist"
+      growth: "fisher_quality_growth"
+    team_overrides:
+      min_confidence_threshold: 0.62
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "advanced"
+    is_default: false
+    is_featured: false
+    is_hidden: true
+    why_distinct: "Only team using momentum:relative_strength_purist — all momentum analysis framed as SPY-relative ranking. Higher confidence threshold (0.62). macro:risk_on_risk_off gates regime. Useful for users explicitly targeting index-relative alpha."
+    known_limitations:
+      - "Relative strength framing can miss absolute-return opportunities in sectors rotating out of SPY leadership."
+      - "fisher_quality_growth means it won't confirm zero-margin growth stocks."
+    not_for:
+      - "Absolute return mandates."
+      - "Conservative investors."
+
+  - team_id: "capital-preservation"
+    display_name: "Capital Preservation"
+    description: "Permanent anti-hype posture — all signals require high confidence, sentiment is treated skeptically, and valuation discipline is strict."
+    target_user: "Conservative investor whose primary goal is not losing money; will accept below-market returns in exchange for reduced drawdown probability."
+    suitable_for:
+      - "capital preservation"
+      - "don't lose money"
+      - "conservative"
+      - "anti-hype"
+      - "risk averse"
+      - "low drawdown"
+    risk_level: "conservative"
+    time_horizon: "long"
+    enabled_analysis_agents:
+      - "fundamentals"
+      - "technicals"
+      - "sentiment"
+      - "macro"
+      - "value"
+      - "momentum"
+      - "growth"
+    weights:
+      fundamentals: 88
+      technicals: 18
+      sentiment: 15
+      macro: 88
+      value: 88
+      momentum: 12
+      growth: 28
+    agent_variants:
+      fundamentals: "quality_compounder"
+      technicals: "balanced"
+      sentiment: "skeptical_filter"
+      macro: "marks_cycle_watch"
+      value: "graham_margin_of_safety"
+      momentum: "balanced"
+      growth: "quality_compounder"
+    team_overrides:
+      min_confidence_threshold: 0.68
+      enable_bull_bear_debate: true
+      backtest_mode_default: "backtest_strict"
+    excluded_sectors: []
+    complexity: "beginner"
+    is_default: false
+    is_featured: false
+    is_hidden: true
+    why_distinct: "Highest confidence threshold in catalog (0.68 vs 0.55 default). Three-way tie for highest weight (F:88, M:88, V:88). Combines marks_cycle_watch + graham_margin_of_safety + skeptical_filter — the most conservative configuration available."
+    known_limitations:
+      - "Very high confidence threshold will result in many HOLD outputs — this is intentional."
+      - "Opportunity cost in bull markets is explicit and significant."
+    not_for:
+      - "Investors seeking alpha or aggressive returns."
+      - "Growth or momentum mandates."

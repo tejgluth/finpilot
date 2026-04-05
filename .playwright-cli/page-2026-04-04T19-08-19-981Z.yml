@@ -1,0 +1,108 @@
+- generic [ref=e3]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: FinPilot
+      - generic [ref=e8]: Local-first investing lab
+    - navigation [ref=e9]:
+      - link "Setup" [ref=e10] [cursor=pointer]:
+        - /url: /
+      - link "Strategy" [ref=e11] [cursor=pointer]:
+        - /url: /strategy
+      - link "Backtest" [ref=e12] [cursor=pointer]:
+        - /url: /backtest
+      - link "Portfolio" [ref=e13] [cursor=pointer]:
+        - /url: /portfolio
+      - link "Trading" [ref=e14] [cursor=pointer]:
+        - /url: /trading
+      - link "Audit" [ref=e15] [cursor=pointer]:
+        - /url: /audit
+      - link "Settings" [ref=e16] [cursor=pointer]:
+        - /url: /settings
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: Workspace
+        - heading "Truth-first controls, local-only analytics" [level=1] [ref=e21]
+      - generic [ref=e23]: Paper default
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: Live controls
+          - heading "Trading status" [level=3] [ref=e30]
+        - generic [ref=e31]:
+          - generic [ref=e32]: "Mode: Paper"
+          - generic [ref=e33]: "Permission: full_auto"
+          - generic [ref=e34]: Risks acknowledged
+          - generic [ref=e35]: Kill switch idle
+        - paragraph [ref=e36]: Paper mode is active. You can stay in simulation as long as you want.
+      - generic [ref=e37]:
+        - generic [ref=e39]:
+          - generic [ref=e40]: Automation
+          - heading "Permission level" [level=3] [ref=e41]
+        - paragraph [ref=e42]: This only changes confirmation behavior inside FinPilot. It does not lock or unlock live trading for you.
+        - generic [ref=e43]:
+          - button "Full Manual Every trade needs approval." [ref=e44] [cursor=pointer]:
+            - generic [ref=e46]: Full Manual
+            - paragraph [ref=e47]: Every trade needs approval.
+          - button "Semi-Auto Small trades may auto-confirm." [ref=e48] [cursor=pointer]:
+            - generic [ref=e50]: Semi-Auto
+            - paragraph [ref=e51]: Small trades may auto-confirm.
+          - button "Full Auto All trades can execute within guardrails." [ref=e52] [cursor=pointer]:
+            - generic [ref=e54]: Full Auto
+            - paragraph [ref=e55]: All trades can execute within guardrails.
+      - generic [ref=e56]:
+        - generic [ref=e58]:
+          - generic [ref=e59]: Server-clamped
+          - heading "Guardrail settings" [level=3] [ref=e60]
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]: Max position %
+            - generic [ref=e64]: "5"
+          - generic [ref=e65]:
+            - generic [ref=e66]: Max sector %
+            - generic [ref=e67]: "30"
+          - generic [ref=e68]:
+            - generic [ref=e69]: Max open positions
+            - generic [ref=e70]: "10"
+          - generic [ref=e71]:
+            - generic [ref=e72]: Max daily loss %
+            - generic [ref=e73]: "3"
+          - generic [ref=e74]:
+            - generic [ref=e75]: Max weekly drawdown %
+            - generic [ref=e76]: "7"
+          - generic [ref=e77]:
+            - generic [ref=e78]: Max total drawdown %
+            - generic [ref=e79]: "20"
+          - generic [ref=e80]:
+            - generic [ref=e81]: Auto-confirm USD
+            - generic [ref=e82]: "100"
+          - generic [ref=e83]:
+            - generic [ref=e84]: Max trades/day
+            - generic [ref=e85]: "5"
+          - generic [ref=e86]:
+            - generic [ref=e87]: Trading hours only
+            - generic [ref=e88]: "true"
+      - generic [ref=e89]:
+        - generic [ref=e91]:
+          - generic [ref=e92]: Safety
+          - heading "Circuit breakers" [level=3] [ref=e93]
+        - paragraph [ref=e94]: Daily loss, weekly drawdown, total drawdown, and max-trades-per-day checks run server-side before execution.
+      - generic [ref=e95]:
+        - generic [ref=e97]:
+          - generic [ref=e98]: Mode awareness
+          - heading "Live trading responsibility" [level=3] [ref=e99]
+        - generic [ref=e100]:
+          - paragraph [ref=e101]:
+            - text: FinPilot does not unlock or approve live trading for you. If you switch Alpaca to
+            - code [ref=e102]: live
+            - text: mode, that is your decision and your real account is on the line.
+          - generic [ref=e103]: Paper mode is active. You can stay in simulation as long as you want, or move to live only when you decide to do it.
+          - list [ref=e104]:
+            - listitem [ref=e105]: Guardrails and the kill switch are safety tools, not permission from the app to trade live.
+            - listitem [ref=e106]: Switching modes is up to you in setup or your local environment.
+            - listitem [ref=e107]: Full Manual, Semi-Auto, and Full Auto only change confirmation behavior.
+      - generic [ref=e108]:
+        - generic [ref=e110]:
+          - generic [ref=e111]: Kill switch
+          - heading "Emergency halt" [level=3] [ref=e112]
+        - button "Activate kill switch" [ref=e113] [cursor=pointer]

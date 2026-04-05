@@ -1,0 +1,61 @@
+- generic [ref=e3]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: FinPilot
+      - generic [ref=e8]: Local-first investing lab
+    - navigation [ref=e9]:
+      - link "Setup" [ref=e10] [cursor=pointer]:
+        - /url: /
+      - link "Strategy" [ref=e11] [cursor=pointer]:
+        - /url: /strategy
+      - link "Backtest" [ref=e12] [cursor=pointer]:
+        - /url: /backtest
+      - link "Portfolio" [ref=e13] [cursor=pointer]:
+        - /url: /portfolio
+      - link "Trading" [ref=e14] [cursor=pointer]:
+        - /url: /trading
+      - link "Audit" [ref=e15] [cursor=pointer]:
+        - /url: /audit
+      - link "Settings" [ref=e16] [cursor=pointer]:
+        - /url: /settings
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: Workspace
+        - heading "Truth-first controls, local-only analytics" [level=1] [ref=e21]
+      - generic [ref=e23]: Paper default
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: Local analytics
+          - heading "Portfolio snapshot" [level=3] [ref=e30]
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - generic [ref=e33]: Cash
+            - generic [ref=e34]: $100000
+          - generic [ref=e35]:
+            - generic [ref=e36]: Equity
+            - generic [ref=e37]: $100000
+          - generic [ref=e38]:
+            - generic [ref=e39]: Daily P&L
+            - generic [ref=e40]: $0
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e44]:
+            - generic [ref=e45]: Portfolio
+            - heading "Local P&L trend" [level=3] [ref=e46]
+          - img [ref=e50]
+        - generic [ref=e57]:
+          - generic [ref=e59]:
+            - generic [ref=e60]: Attribution
+            - heading "Per-agent local accuracy" [level=3] [ref=e61]
+          - generic [ref=e62]:
+            - generic [ref=e64]:
+              - generic [ref=e65]: fundamentals
+              - generic [ref=e66]: 62%
+            - generic [ref=e70]:
+              - generic [ref=e71]: technicals
+              - generic [ref=e72]: 57%
+            - generic [ref=e76]:
+              - generic [ref=e77]: macro
+              - generic [ref=e78]: 54%

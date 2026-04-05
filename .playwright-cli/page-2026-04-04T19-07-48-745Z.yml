@@ -1,0 +1,308 @@
+- generic [ref=e3]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: FinPilot
+      - generic [ref=e8]: Local-first investing lab
+    - navigation [ref=e9]:
+      - link "Setup" [ref=e10] [cursor=pointer]:
+        - /url: /
+      - link "Strategy" [ref=e11] [cursor=pointer]:
+        - /url: /strategy
+      - link "Backtest" [ref=e12] [cursor=pointer]:
+        - /url: /backtest
+      - link "Portfolio" [ref=e13] [cursor=pointer]:
+        - /url: /portfolio
+      - link "Trading" [ref=e14] [cursor=pointer]:
+        - /url: /trading
+      - link "Audit" [ref=e15] [cursor=pointer]:
+        - /url: /audit
+      - link "Settings" [ref=e16] [cursor=pointer]:
+        - /url: /settings
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: Workspace
+        - heading "Truth-first controls, local-only analytics" [level=1] [ref=e21]
+      - generic [ref=e23]: Paper default
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e29]: Step 1
+            - heading "Local onboarding" [level=3] [ref=e30]
+          - generic [ref=e31]: AI ready
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - paragraph [ref=e34]:
+              - text: FinPilot now creates
+              - code [ref=e35]: .env
+              - text: for you and opens this app immediately. Add one AI provider to get started, keep Alpaca in paper mode, and layer in optional data sources whenever you want more signal depth.
+            - generic [ref=e36]:
+              - generic [ref=e37]: Security posture
+              - paragraph [ref=e38]: Your keys stay on this machine. The browser sends them only to your local FinPilot backend, which writes them into the local .env file. FinPilot never stores them in browser storage and only returns masked status values back to the UI.
+            - generic [ref=e39]:
+              - generic [ref=e40]:
+                - generic [ref=e41]: "1"
+                - generic [ref=e42]: Choose one AI provider to unlock strategy chat and agent analysis.
+              - generic [ref=e43]:
+                - generic [ref=e44]: "2"
+                - generic [ref=e45]: Add Alpaca if you want paper trading from inside FinPilot.
+              - generic [ref=e46]:
+                - generic [ref=e47]: "3"
+                - generic [ref=e48]: Add optional data providers only when you want deeper signals.
+            - generic [ref=e49]:
+              - generic [ref=e50]:
+                - generic [ref=e51]:
+                  - generic [ref=e52]: OpenAI
+                  - generic [ref=e53]: not configured
+                - generic [ref=e54]: Missing
+              - generic [ref=e55]:
+                - generic [ref=e56]:
+                  - generic [ref=e57]: Anthropic
+                  - generic [ref=e58]: not configured
+                - generic [ref=e59]: Missing
+              - generic [ref=e60]:
+                - generic [ref=e61]:
+                  - generic [ref=e62]: Google
+                  - generic [ref=e63]: not configured
+                - generic [ref=e64]: Missing
+              - generic [ref=e65]:
+                - generic [ref=e66]:
+                  - generic [ref=e67]: Alpaca
+                  - generic [ref=e68]: not configured
+                - generic [ref=e69]: Needs API + secret key
+              - generic [ref=e70]:
+                - generic [ref=e71]:
+                  - generic [ref=e72]: Finnhub
+                  - generic [ref=e73]: not configured
+                - generic [ref=e74]: Optional news key
+              - generic [ref=e75]:
+                - generic [ref=e76]:
+                  - generic [ref=e77]: Marketaux
+                  - generic [ref=e78]: not configured
+                - generic [ref=e79]: Optional news key
+              - generic [ref=e80]:
+                - generic [ref=e81]:
+                  - generic [ref=e82]: FMP
+                  - generic [ref=e83]: not configured
+                - generic [ref=e84]: Optional market data key
+              - generic [ref=e85]:
+                - generic [ref=e86]:
+                  - generic [ref=e87]: FRED
+                  - generic [ref=e88]: not configured
+                - generic [ref=e89]: Optional macro data key
+              - generic [ref=e90]:
+                - generic [ref=e91]:
+                  - generic [ref=e92]: Polygon
+                  - generic [ref=e93]: not configured
+                - generic [ref=e94]: Optional premium data key
+              - generic [ref=e95]:
+                - generic [ref=e96]:
+                  - generic [ref=e97]: Reddit
+                  - generic [ref=e98]: not configured
+                - generic [ref=e99]: Needs client ID + secret
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - generic [ref=e102]:
+                - generic [ref=e103]:
+                  - generic [ref=e104]: Start here
+                  - heading "Pick your AI provider" [level=4] [ref=e105]
+                - generic [ref=e106]: Ollama
+              - generic [ref=e107]:
+                - button "OpenAI recommended Fastest path if you want the default hosted AI provider." [ref=e108] [cursor=pointer]:
+                  - generic [ref=e109]:
+                    - generic [ref=e110]: OpenAI
+                    - generic [ref=e111]: recommended
+                  - paragraph [ref=e112]: Fastest path if you want the default hosted AI provider.
+                - button "Anthropic Alternative hosted model provider for analysis and strategy chat." [ref=e113] [cursor=pointer]:
+                  - generic [ref=e115]: Anthropic
+                  - paragraph [ref=e116]: Alternative hosted model provider for analysis and strategy chat.
+                - button "Google Gemini Hosted Gemini models for users who prefer Google AI Studio." [ref=e117] [cursor=pointer]:
+                  - generic [ref=e119]: Google Gemini
+                  - paragraph [ref=e120]: Hosted Gemini models for users who prefer Google AI Studio.
+                - button "Ollama Run a local model on your own machine with no hosted API key." [ref=e121] [cursor=pointer]:
+                  - generic [ref=e123]: Ollama
+                  - paragraph [ref=e124]: Run a local model on your own machine with no hosted API key.
+              - generic [ref=e125]:
+                - generic [ref=e126]:
+                  - generic [ref=e127]:
+                    - generic [ref=e128]: local model
+                    - generic [ref=e129]: No API key is needed. Install Ollama locally and pull the model you want FinPilot to use.
+                  - generic [ref=e130]: Good for privacy-first experiments if Ollama is already installed locally.
+                  - list [ref=e131]:
+                    - listitem [ref=e132]: Install Ollama on your computer.
+                    - listitem [ref=e133]: Download a model such as llama3.2.
+                    - listitem [ref=e134]: Choose Ollama in FinPilot and keep the default local URL unless you changed it.
+                  - link "Open official provider page" [ref=e135] [cursor=pointer]:
+                    - /url: https://ollama.com/download
+                - generic [ref=e137]: No hosted API key is needed for Ollama. If Ollama is installed locally, you can save this choice and continue.
+            - generic [ref=e138]:
+              - group [ref=e139]:
+                - generic "Alpaca broker recommended Paper trading and, later, staged live trading unlocks. broker" [ref=e140] [cursor=pointer]:
+                  - generic [ref=e141]:
+                    - generic [ref=e142]:
+                      - generic [ref=e143]: Alpaca broker
+                      - generic [ref=e144]: recommended
+                    - paragraph [ref=e145]: Paper trading and, later, staged live trading unlocks.
+                  - generic [ref=e146]: broker
+                - generic [ref=e147]:
+                  - generic [ref=e148]:
+                    - generic [ref=e149]:
+                      - generic [ref=e150]: Needs API + secret key
+                      - generic [ref=e151]: Required if you want FinPilot to place paper or live trades through Alpaca.
+                    - generic [ref=e152]: Recommended if you want to place paper trades from FinPilot.
+                    - list [ref=e153]:
+                      - listitem [ref=e154]: Create or sign in to your Alpaca account.
+                      - listitem [ref=e155]: Open your API credentials page and copy both the API key and secret key.
+                      - listitem [ref=e156]: Leave FinPilot in paper mode unless you intentionally switch later.
+                    - link "Open official setup page" [ref=e157] [cursor=pointer]:
+                      - /url: https://app.alpaca.markets/signup
+                  - generic [ref=e158]:
+                    - generic [ref=e159]:
+                      - generic [ref=e160]: Alpaca mode
+                      - generic [ref=e161]:
+                        - button "paper Recommended for every new setup." [ref=e162] [cursor=pointer]:
+                          - generic [ref=e163]: paper
+                          - generic [ref=e164]: Recommended for every new setup.
+                        - button "live Leave off until you intentionally unlock live trading." [ref=e165] [cursor=pointer]:
+                          - generic [ref=e166]: live
+                          - generic [ref=e167]: Leave off until you intentionally unlock live trading.
+                    - generic [ref=e168]:
+                      - generic [ref=e169]: ALPACA_API_KEY
+                      - textbox "ALPACA_API_KEY" [ref=e170]:
+                        - /placeholder: Paste alpaca_api_key here
+                    - generic [ref=e171]:
+                      - generic [ref=e172]: ALPACA_SECRET_KEY
+                      - textbox "ALPACA_SECRET_KEY" [ref=e173]:
+                        - /placeholder: Paste alpaca_secret_key here
+              - group [ref=e174]:
+                - generic "Finnhub news Adds market news and sentiment signals. news" [ref=e175] [cursor=pointer]:
+                  - generic [ref=e176]:
+                    - generic [ref=e178]: Finnhub news
+                    - paragraph [ref=e179]: Adds market news and sentiment signals.
+                  - generic [ref=e180]: news
+              - group [ref=e181]:
+                - generic "Marketaux Entity-aware news sentiment for stocks and sectors. news" [ref=e182] [cursor=pointer]:
+                  - generic [ref=e183]:
+                    - generic [ref=e185]: Marketaux
+                    - paragraph [ref=e186]: Entity-aware news sentiment for stocks and sectors.
+                  - generic [ref=e187]: news
+              - group [ref=e188]:
+                - generic "Financial Modeling Prep Earnings surprises, analyst grades, and growth context. market data" [ref=e189] [cursor=pointer]:
+                  - generic [ref=e190]:
+                    - generic [ref=e192]: Financial Modeling Prep
+                    - paragraph [ref=e193]: Earnings surprises, analyst grades, and growth context.
+                  - generic [ref=e194]: market data
+              - group [ref=e195]:
+                - generic "FRED Optional key for higher FRED rate limits. market data" [ref=e196] [cursor=pointer]:
+                  - generic [ref=e197]:
+                    - generic [ref=e199]: FRED
+                    - paragraph [ref=e200]: Optional key for higher FRED rate limits.
+                  - generic [ref=e201]: market data
+              - group [ref=e202]:
+                - generic "Reddit app Lets the sentiment agent read Reddit mention trends. optional" [ref=e203] [cursor=pointer]:
+                  - generic [ref=e204]:
+                    - generic [ref=e206]: Reddit app
+                    - paragraph [ref=e207]: Lets the sentiment agent read Reddit mention trends.
+                  - generic [ref=e208]: optional
+              - group [ref=e209]:
+                - generic "Polygon Optional premium market data provider. market data" [ref=e210] [cursor=pointer]:
+                  - generic [ref=e211]:
+                    - generic [ref=e213]: Polygon
+                    - paragraph [ref=e214]: Optional premium market data provider.
+                  - generic [ref=e215]: market data
+            - generic [ref=e217]:
+              - generic [ref=e218]:
+                - generic [ref=e219]: Save onboarding details locally
+                - paragraph [ref=e220]:
+                  - text: This writes your selections into the local
+                  - code [ref=e221]: .env
+                  - text: file and refreshes masked status in the app.
+              - button "Save to .env" [ref=e222] [cursor=pointer]
+      - generic [ref=e223]:
+        - generic [ref=e225]:
+          - generic [ref=e226]: Step 2
+          - heading "Data source posture" [level=3] [ref=e227]
+        - generic [ref=e228]:
+          - generic [ref=e229]:
+            - generic [ref=e230]: yfinance
+            - generic [ref=e231]: Enabled
+          - generic [ref=e232]:
+            - generic [ref=e233]: FRED
+            - generic [ref=e234]: Enabled
+          - generic [ref=e235]:
+            - generic [ref=e236]: SEC EDGAR
+            - generic [ref=e237]: Enabled
+          - generic [ref=e238]:
+            - generic [ref=e239]: CoinGecko
+            - generic [ref=e240]: Enabled
+          - generic [ref=e241]:
+            - generic [ref=e242]: Alpaca Data
+            - generic [ref=e243]: Disabled
+          - generic [ref=e244]:
+            - generic [ref=e245]: Finnhub
+            - generic [ref=e246]: Disabled
+          - generic [ref=e247]:
+            - generic [ref=e248]: Marketaux
+            - generic [ref=e249]: Disabled
+          - generic [ref=e250]:
+            - generic [ref=e251]: FMP
+            - generic [ref=e252]: Disabled
+          - generic [ref=e253]:
+            - generic [ref=e254]: Reddit
+            - generic [ref=e255]: Disabled
+          - generic [ref=e256]:
+            - generic [ref=e257]: Polygon
+            - generic [ref=e258]: Disabled
+      - generic [ref=e259]:
+        - generic [ref=e260]:
+          - generic [ref=e261]:
+            - generic [ref=e262]: Step 3
+            - heading "Detected Alpaca plan" [level=3] [ref=e263]
+          - generic [ref=e264]: Unknown (using Free limits for safety)
+        - paragraph [ref=e265]: Plan detection failed. Using Free plan limits as a conservative default. You can manually select your plan in Settings -> Data Sources.
+        - generic [ref=e266]:
+          - generic [ref=e267]:
+            - generic [ref=e268]: Data req/min
+            - generic [ref=e269]: "200"
+          - generic [ref=e270]:
+            - generic [ref=e271]: Orders/min
+            - generic [ref=e272]: "60"
+          - generic [ref=e273]:
+            - generic [ref=e274]: Orders/day
+            - generic [ref=e275]: "200"
+      - generic [ref=e276]:
+        - generic [ref=e277]:
+          - generic [ref=e278]:
+            - generic [ref=e279]: Step 4
+            - heading "Trading risk acknowledgment" [level=3] [ref=e280]
+          - generic [ref=e281]: 0/9 checked
+        - generic [ref=e282]:
+          - generic [ref=e283]:
+            - checkbox "I understand that FinPilot is a research tool, not investment advice, and is not regulated by any financial authority." [ref=e284]
+            - generic [ref=e285]: I understand that FinPilot is a research tool, not investment advice, and is not regulated by any financial authority.
+          - generic [ref=e286]:
+            - checkbox "I understand that backtest results are historical only. Past performance does not predict future results." [ref=e287]
+            - generic [ref=e288]: I understand that backtest results are historical only. Past performance does not predict future results.
+          - generic [ref=e289]:
+            - checkbox "I understand that AI agents can make mistakes despite grounding safeguards. I will not blindly trust agent decisions." [ref=e290]
+            - generic [ref=e291]: I understand that AI agents can make mistakes despite grounding safeguards. I will not blindly trust agent decisions.
+          - generic [ref=e292]:
+            - checkbox "I understand that live trading uses real money and I can lose my entire investment." [ref=e293]
+            - generic [ref=e294]: I understand that live trading uses real money and I can lose my entire investment.
+          - generic [ref=e295]:
+            - checkbox "I understand that guardrails reduce but do not eliminate risk. Extreme market conditions can cause losses beyond configured limits." [ref=e296]
+            - generic [ref=e297]: I understand that guardrails reduce but do not eliminate risk. Extreme market conditions can cause losses beyond configured limits.
+          - generic [ref=e298]:
+            - checkbox "I understand that Full Auto mode places trades without per-trade approval. I will start with Full Manual or Semi-Auto first." [ref=e299]
+            - generic [ref=e300]: I understand that Full Auto mode places trades without per-trade approval. I will start with Full Manual or Semi-Auto first.
+          - generic [ref=e301]:
+            - checkbox "I am legally and financially responsible for all trades executed by this system, even in automated modes." [ref=e302]
+            - generic [ref=e303]: I am legally and financially responsible for all trades executed by this system, even in automated modes.
+          - generic [ref=e304]:
+            - checkbox "I will keep my API keys secure and never commit my .env file to a public repository." [ref=e305]
+            - generic [ref=e306]: I will keep my API keys secure and never commit my .env file to a public repository.
+          - generic [ref=e307]:
+            - checkbox "I understand paper trading and backtest review are strongly recommended before switching to live mode, but that decision is mine." [ref=e308]
+            - generic [ref=e309]: I understand paper trading and backtest review are strongly recommended before switching to live mode, but that decision is mine.
+        - button "Record acknowledgment" [disabled] [ref=e310]
