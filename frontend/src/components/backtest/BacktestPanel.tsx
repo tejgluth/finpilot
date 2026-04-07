@@ -24,19 +24,19 @@ export default function BacktestPanel({
   const activeTeam = useStrategyStore((state) => state.activeTeam);
   const teams = useStrategyStore((state) => state.teams);
 
-  const [universeMode, setUniverseMode] = useState<UniverseMode>("single_ticker");
+  const [universeMode, setUniverseMode] = useState<UniverseMode>("current_sp500");
   const [ticker, setTicker] = useState("AAPL");
   const [customUniverseCsv, setCustomUniverseCsv] = useState("");
   const [startDate, setStartDate] = useState("2023-01-01");
   const [endDate, setEndDate] = useState("2025-12-31");
   const [initialCash, setInitialCash] = useState(100000);
-  const [backtestMode, setBacktestMode] = useState<BacktestMode>("backtest_strict");
-  const [rebalanceFrequency, setRebalanceFrequency] = useState<RebalanceFrequency>("monthly");
+  const [backtestMode, setBacktestMode] = useState<BacktestMode>("backtest_experimental");
+  const [rebalanceFrequency, setRebalanceFrequency] = useState<RebalanceFrequency>("weekly");
   const [candidatePoolSize, setCandidatePoolSize] = useState(60);
   const [topNHoldings, setTopNHoldings] = useState(10);
   const [minConvictionScore, setMinConvictionScore] = useState(0.18);
   const [minConfidenceThreshold, setMinConfidenceThreshold] = useState(0.55);
-  const [weightingMode, setWeightingMode] = useState<WeightingMode>("capped_conviction");
+  const [weightingMode, setWeightingMode] = useState<WeightingMode>("confidence_weighted");
   const [scoreNormalizationMode, setScoreNormalizationMode] = useState<ScoreNormalizationMode>("power");
   const [scoreExponent, setScoreExponent] = useState(1.6);
   const [riskAdjustmentMode, setRiskAdjustmentMode] = useState<RiskAdjustmentMode>("mild_inverse_vol");
@@ -69,7 +69,7 @@ export default function BacktestPanel({
     setTopNHoldings(profile?.top_n_target ?? settings.backtest.default_top_n_holdings);
     setMinConvictionScore(profile?.min_conviction_score ?? settings.backtest.default_min_conviction_score);
     setMinConfidenceThreshold(activeTeam?.compiled_team.team_overrides?.min_confidence_threshold as number ?? settings.agents.min_confidence_threshold);
-    setWeightingMode(profile?.weighting_mode ?? settings.backtest.default_weighting_mode);
+    setWeightingMode(profile?.weighting_mode ?? "confidence_weighted");
     setScoreNormalizationMode(settings.backtest.default_score_normalization_mode);
     setScoreExponent(profile?.score_exponent ?? settings.backtest.default_score_exponent);
     setRiskAdjustmentMode(profile?.risk_adjustment_mode ?? settings.backtest.default_risk_adjustment_mode);
@@ -90,7 +90,7 @@ export default function BacktestPanel({
     setMinHistoryDays(settings.backtest.default_min_history_days);
     setFidelityMode(settings.backtest.default_fidelity_mode);
     setCachePolicy(settings.backtest.default_cache_policy);
-    setRebalanceFrequency((profile?.rebalance_frequency_preference as RebalanceFrequency | undefined) ?? "monthly");
+    setRebalanceFrequency((profile?.rebalance_frequency_preference as RebalanceFrequency | undefined) ?? "weekly");
   }, [settings, activeTeam?.team_id, activeTeam?.version_number]);
 
   const availableComparisonTeams = teams.filter(

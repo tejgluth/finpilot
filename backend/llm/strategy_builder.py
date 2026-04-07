@@ -1092,6 +1092,17 @@ async def save_team_version(
     return version
 
 
+async def delete_team_version(team_id: str, version_number: int) -> bool:
+    raw = await _load_team_versions()
+    if team_id not in raw:
+        return False
+    raw[team_id] = [item for item in raw[team_id] if item.get("version_number") != version_number]
+    if not raw[team_id]:
+        del raw[team_id]
+    await _save_team_versions(raw)
+    return True
+
+
 async def select_active_team(team_id: str, version_number: int | None = None) -> TeamVersion:
     version = await get_team_version(team_id, version_number)
     if version is None:

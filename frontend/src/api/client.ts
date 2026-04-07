@@ -136,6 +136,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ version_number: versionNumber ?? null }),
     }),
+  deleteStrategyTeam: (teamId: string, versionNumber: number) =>
+    request<{ ok: boolean }>(`/api/strategy/teams/${teamId}/versions/${versionNumber}`, {
+      method: "DELETE",
+    }),
   compareStrategyTeam: (payload: { candidate_compiled_team?: CompiledTeam; team_id?: string; version_number?: number }) =>
     request<TeamComparison>("/api/strategy/compare", {
       method: "POST",

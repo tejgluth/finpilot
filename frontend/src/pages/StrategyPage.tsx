@@ -1,6 +1,5 @@
 import clsx from "clsx";
 import { useEffect, useState } from "react";
-import CustomTeamConversation from "../components/studio/CustomTeamConversation";
 import TeamClassificationBadge from "../components/studio/TeamClassificationBadge";
 import TeamStudio from "../components/studio/TeamStudio";
 import AgentTeamCard from "../components/strategy/AgentTeamCard";
@@ -19,6 +18,12 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "visualize", label: "Visualize" },
   { id: "compare", label: "Compare" },
   { id: "custom", label: "Custom Team" },
+];
+
+const SEED_SUGGESTIONS = [
+  "Technical-focused short-term team with momentum secondary",
+  "Macro-driven conservative team, avoid growth stocks",
+  "Balanced fundamentals + sentiment team for mid-cap equity",
 ];
 
 function EmptyState({
@@ -46,6 +51,7 @@ function EmptyState({
 
 export default function StrategyPage() {
   const [activeTab, setActiveTab] = useState<Tab>("build");
+  const [customSeedPrompt, setCustomSeedPrompt] = useState("");
 
   const {
     activeTeam,
@@ -60,6 +66,7 @@ export default function StrategyPage() {
     premadeCatalog,
     saveDraft,
     selectTeam,
+    deleteTeam,
     sendMessage,
     compileDraft,
     teams,
@@ -72,10 +79,15 @@ export default function StrategyPage() {
   const {
     compiledTeam: customCompiledTeam,
     conversation: customConversation,
+    draft: customDraft,
     hydrate: hydrateCustom,
+    loading: customLoading,
+    error: customError,
+    startConversation: startCustomConversation,
+    compileDraft: compileCustomDraft,
+    clearError: clearCustomError,
     saveTeam: saveCustomTeam,
     saving: savingCustom,
-    error: customError,
   } = useCustomTeamStore();
 
   useEffect(() => {
@@ -86,6 +98,25 @@ export default function StrategyPage() {
   useEffect(() => {
     void hydrateCustom();
   }, [hydrateCustom]);
+
+  async function handleCustomStart(e: React.FormEvent) {
+    e.preventDefault();
+    const prompt = customSeedPrompt.trim() || undefined;
+    const started = await startCustomConversation(prompt);
+    if (started) setCustomSeedPrompt("");
+  }
+
+  const latestTurn = customConversation?.latest_turn;
+  const hasCustomTopology = Boolean(customDraft?.topology?.nodes?.length);
+  const modeBadges = latestTurn
+    ? [
+        { label: "Analyze", supported: latestTurn.mode_compatibility.analyze },
+        { label: "Paper", supported: latestTurn.mode_compatibility.paper },
+        { label: "Live", supported: latestTurn.mode_compatibility.live },
+        { label: "Strict BT", supported: latestTurn.mode_compatibility.backtest_strict },
+        { label: "Exp BT", supported: latestTurn.mode_compatibility.backtest_experimental },
+      ]
+    : [];
 
   return (
     <div className="space-y-4">
@@ -164,6 +195,7 @@ export default function StrategyPage() {
             ) : null}
             <SavedTeamsPanel
               activeTeam={activeTeam}
+              onDelete={(teamId, versionNumber) => void deleteTeam(teamId, versionNumber)}
               onSelect={(teamId, versionNumber) => void selectTeam(teamId, versionNumber)}
               teams={teams}
             />
@@ -222,49 +254,240 @@ export default function StrategyPage() {
         id="panel-custom"
         role="tabpanel"
       >
-        <div className="space-y-6">
-          <CustomTeamConversation />
-
-          {customCompiledTeam && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-ink/8 bg-white px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div>
-                  <p className="font-semibold text-ink">{customCompiledTeam.name}</p>
-                  <p className="text-[12px] text-ink/50">{customCompiledTeam.description}</p>
-                </div>
-                <TeamClassificationBadge
-                  classification={customCompiledTeam.team_classification}
-                  size="md"
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  className="rounded-full border border-ink/10 px-4 py-2 text-sm text-ink/70 hover:bg-slate"
-                  onClick={() => useCustomTeamStore.getState().reset()}
-                  type="button"
-                >
-                  Start over
-                </button>
-                <button
-                  className="rounded-full bg-ink px-5 py-2 text-sm font-semibold text-white hover:bg-ink/80 disabled:opacity-40"
-                  disabled={savingCustom}
-                  onClick={() => void saveCustomTeam(`${customCompiledTeam.name} — Custom`)}
-                  type="button"
-                >
-                  {savingCustom ? "Saving…" : "Save team"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {customError && (
-            <p className="rounded-xl bg-ember/10 px-4 py-3 text-sm text-ember">
-              {customError}
+        {!customConversation ? (
+          // No conversation yet — seed prompt
+          <div className="rounded-[28px] border border-white/70 bg-white/80 p-8 shadow-soft backdrop-blur-sm">
+            <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-ink/40">
+              Custom Team Builder
             </p>
-          )}
+            <h2 className="mb-2 font-display text-xl font-semibold text-ink">
+              Design your own agent team
+            </h2>
+            <p className="mb-6 text-sm leading-relaxed text-ink/60">
+              Describe the team you want to build — which analysis signals to include, your risk
+              tolerance, time horizon, and any sectors to avoid.
+            </p>
 
-          {customConversation?.latest_draft?.topology?.nodes?.length ? <TeamStudio /> : null}
-        </div>
+            {customError && (
+              <div className="mb-4 flex items-start justify-between gap-3 rounded-xl bg-ember/10 px-4 py-3">
+                <p className="text-sm text-ember">{customError}</p>
+                <button
+                  className="text-[12px] text-ember/70 hover:text-ember"
+                  onClick={clearCustomError}
+                  type="button"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            <div className="mb-4 flex flex-wrap gap-2">
+              {SEED_SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  className="rounded-full border border-tide/30 bg-tide/5 px-3 py-1.5 text-[12px] text-tide hover:bg-tide/10"
+                  onClick={() => setCustomSeedPrompt(s)}
+                  type="button"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+
+            <form className="space-y-3" onSubmit={handleCustomStart}>
+              <textarea
+                className="w-full min-h-28 resize-none rounded-[20px] border border-ink/10 bg-slate/50 px-4 py-3 text-sm text-ink focus:border-tide focus:outline-none focus:ring-2 focus:ring-tide/20"
+                onChange={(e) => setCustomSeedPrompt(e.target.value)}
+                placeholder="Describe the team you want to build…"
+                value={customSeedPrompt}
+              />
+              <div className="flex justify-end">
+                <button
+                  className="rounded-full bg-tide px-6 py-2.5 text-sm font-semibold text-white hover:bg-tide/90 disabled:opacity-40"
+                  disabled={customLoading}
+                  type="submit"
+                >
+                  {customLoading ? "Starting…" : "Start building"}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Visualization at the top */}
+            {hasCustomTopology ? (
+              <TeamStudio />
+            ) : (
+              <div className="flex h-32 items-center justify-center rounded-[20px] border border-ink/8 bg-white text-[13px] text-ink/40">
+                Building topology…
+              </div>
+            )}
+
+            {/* Compile action — draft exists but not yet compiled */}
+            {hasCustomTopology && !customCompiledTeam && (
+              <div className="flex items-center justify-between gap-4 rounded-[20px] border border-ink/8 bg-white px-5 py-4">
+                <div>
+                  <p className="text-sm font-medium text-ink">
+                    Topology ready — {customDraft!.topology.nodes.length} nodes
+                  </p>
+                  <p className="text-[12px] text-ink/50">
+                    {customDraft?.proposed_name ?? "Custom Team"}
+                  </p>
+                </div>
+                <button
+                  className="rounded-full bg-ink px-6 py-2.5 text-sm font-semibold text-white hover:bg-ink/80 disabled:opacity-40"
+                  disabled={customLoading}
+                  onClick={() => void compileCustomDraft()}
+                  type="button"
+                >
+                  {customLoading ? "Compiling…" : "Compile team →"}
+                </button>
+              </div>
+            )}
+
+            {/* Save / Start over — compiled team exists */}
+            {customCompiledTeam && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-ink/8 bg-white px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="font-semibold text-ink">{customCompiledTeam.name}</p>
+                    <p className="text-[12px] text-ink/50">{customCompiledTeam.description}</p>
+                  </div>
+                  <TeamClassificationBadge
+                    classification={customCompiledTeam.team_classification}
+                    size="md"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    className="rounded-full border border-ink/10 px-4 py-2 text-sm text-ink/70 hover:bg-slate"
+                    onClick={() => useCustomTeamStore.getState().reset()}
+                    type="button"
+                  >
+                    Start over
+                  </button>
+                  <button
+                    className="rounded-full bg-ink px-5 py-2 text-sm font-semibold text-white hover:bg-ink/80 disabled:opacity-40"
+                    disabled={savingCustom}
+                    onClick={() => void saveCustomTeam(`${customCompiledTeam.name} — Custom`)}
+                    type="button"
+                  >
+                    {savingCustom ? "Saving…" : "Save team"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Graph changes · mode support · resolved requirements */}
+            {latestTurn && (
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className="rounded-[20px] border border-ink/8 bg-white px-5 py-4">
+                  <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-ink/35">
+                    Resolved
+                  </p>
+                  <div className="space-y-2">
+                    {latestTurn.resolved_requirements.length > 0 ? (
+                      latestTurn.resolved_requirements.map((item) => (
+                        <div key={item.requirement_id} className="rounded-xl bg-emerald-50 px-3 py-2">
+                          <p className="text-[11px] font-medium text-emerald-800">{item.label}</p>
+                          <p className="text-[12px] text-emerald-700">{item.value}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-[12px] text-ink/45">
+                        The architect is still gathering the core design requirements.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-[20px] border border-ink/8 bg-white px-5 py-4">
+                  <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-ink/35">
+                    Graph Changes
+                  </p>
+                  <div className="space-y-2">
+                    {latestTurn.graph_change_summary.length > 0 ? (
+                      latestTurn.graph_change_summary.map((item, index) => (
+                        <p
+                          key={index}
+                          className="rounded-xl bg-slate/60 px-3 py-2 text-[12px] text-ink/75"
+                        >
+                          {item}
+                        </p>
+                      ))
+                    ) : (
+                      <p className="text-[12px] text-ink/45">No graph diff yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-[20px] border border-ink/8 bg-white px-5 py-4">
+                  <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-ink/35">
+                    Mode Support
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {modeBadges.map(({ label, supported }) => (
+                      <div
+                        key={label}
+                        className={clsx(
+                          "rounded-xl border px-2 py-1.5 text-center text-[11px] font-medium",
+                          supported
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-ember/20 bg-ember/5 text-ember",
+                        )}
+                      >
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                  {latestTurn.mode_compatibility.reasons.length > 0 && (
+                    <div className="mt-3 space-y-1">
+                      {latestTurn.mode_compatibility.reasons.slice(0, 4).map((reason, index) => (
+                        <p key={index} className="text-[11px] text-ink/55">
+                          • {reason}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Capability gaps */}
+            {latestTurn && latestTurn.capability_gaps.length > 0 && (
+              <div className="rounded-[20px] border border-gold/30 bg-gold/5 px-5 py-4">
+                <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-gold">
+                  Capability Gaps
+                </p>
+                <div className="space-y-2">
+                  {latestTurn.capability_gaps.map((gap) => (
+                    <div key={gap.capability_id} className="rounded-xl bg-white/70 px-3 py-2">
+                      <p className="text-[12px] font-medium text-ink">{gap.label}</p>
+                      <p className="text-[12px] text-ink/65">{gap.detail}</p>
+                      {gap.recommended_action && (
+                        <p className="mt-1 text-[11px] text-ink/45">{gap.recommended_action}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Error */}
+            {customError && (
+              <div className="flex items-start justify-between gap-3 rounded-xl bg-ember/10 px-4 py-3">
+                <p className="text-sm text-ember">{customError}</p>
+                <button
+                  className="text-[12px] text-ember/70 hover:text-ember"
+                  onClick={clearCustomError}
+                  type="button"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

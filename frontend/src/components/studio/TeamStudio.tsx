@@ -130,16 +130,10 @@ export default function TeamStudio() {
       {/* Top bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          {isEditable ? (
-            <InlineTeamNameEditor
-              name={draft?.proposed_name ?? compiledTeam?.name ?? "Custom Team"}
-              onSave={updateTeamName}
-            />
-          ) : (
-            <h2 className="font-display text-lg font-semibold text-ink">
-              {compiledTeam?.name ?? draft?.proposed_name ?? "Custom Team"}
-            </h2>
-          )}
+          <InlineTeamNameEditor
+            name={draft?.proposed_name ?? compiledTeam?.name ?? "Custom Team"}
+            onSave={updateTeamName}
+          />
           <TeamClassificationBadge classification={classification} size="md" />
         </div>
 

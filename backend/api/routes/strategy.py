@@ -11,6 +11,7 @@ from backend.llm.strategy_builder import (
     compile_strategy_conversation,
     create_strategy_conversation,
     default_team_version,
+    delete_team_version,
     get_active_team,
     get_strategy_conversation,
     get_team_version,
@@ -192,6 +193,15 @@ async def select_team(team_id: str, payload: TeamSelectRequest):
         {"team_id": selected.team_id, "version_number": selected.version_number},
     )
     return {"active_team_id": selected.team_id, "active_version_number": selected.version_number}
+
+
+@router.delete("/teams/{team_id}/versions/{version_number}")
+async def delete_team_version_route(team_id: str, version_number: int):
+    deleted = await delete_team_version(team_id, version_number)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Team version not found")
+    AuditLogger.log("strategy", "team_deleted", {"team_id": team_id, "version_number": version_number})
+    return {"ok": True}
 
 
 @router.get("/default-team")

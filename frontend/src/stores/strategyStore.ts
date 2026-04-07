@@ -45,6 +45,7 @@ interface StrategyStore {
   compileDraft: () => Promise<void>;
   saveDraft: (label: string) => Promise<void>;
   selectTeam: (teamId: string, versionNumber?: number) => Promise<void>;
+  deleteTeam: (teamId: string, versionNumber: number) => Promise<void>;
   updateDraftWeight: (agent: string, value: number) => Promise<void>;
   toggleDraftAgent: (agent: string, enabled: boolean) => Promise<void>;
   updateDraftRisk: (riskLevel: string) => Promise<void>;
@@ -176,6 +177,20 @@ export const useStrategyStore = create<StrategyStore>((set, get) => ({
       });
     } catch (error) {
       set({ saving: false, error: error instanceof Error ? error.message : "Failed to select team." });
+    }
+  },
+  deleteTeam: async (teamId, versionNumber) => {
+    set({ saving: true, error: null });
+    try {
+      await api.deleteStrategyTeam(teamId, versionNumber);
+      const teamPayload = await api.getStrategyTeams();
+      set({
+        teams: teamPayload.teams,
+        activeTeam: teamPayload.active_team,
+        saving: false,
+      });
+    } catch (error) {
+      set({ saving: false, error: error instanceof Error ? error.message : "Failed to delete team." });
     }
   },
   updateDraftWeight: async (agent, value) => {
