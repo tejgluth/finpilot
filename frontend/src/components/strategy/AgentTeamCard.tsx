@@ -13,6 +13,13 @@ const ANALYSIS_AGENTS = [
   "growth",
 ] as const;
 
+const FALLBACK_PORTFOLIO_PROFILE = {
+  concentration_style: "balanced",
+  weighting_mode: "capped_conviction",
+  turnover_style: "medium",
+  top_n_target: 10,
+} as const;
+
 export default function AgentTeamCard({
   team,
   onWeightChange,
@@ -26,10 +33,15 @@ export default function AgentTeamCard({
   onRiskChange: (risk: string) => void;
   onHorizonChange: (horizon: string) => void;
 }) {
+  const portfolioProfile = team.portfolio_construction ?? FALLBACK_PORTFOLIO_PROFILE;
+
   return (
     <Panel title={team.name} eyebrow={`${team.risk_level} / ${team.time_horizon}`}>
       <div className="space-y-4">
         <p className="text-sm text-ink/70">{team.description}</p>
+        <div className="rounded-[24px] bg-slate px-4 py-3 text-sm text-ink/70">
+          Portfolio style: {portfolioProfile.concentration_style} · {portfolioProfile.weighting_mode} · {portfolioProfile.turnover_style} turnover · target {portfolioProfile.top_n_target} names
+        </div>
 
         <div className="grid gap-3 md:grid-cols-2">
           <label className="space-y-2 text-sm">

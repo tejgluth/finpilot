@@ -1,19 +1,24 @@
 import clsx from "clsx";
 import { useEffect, useState } from "react";
+import CustomTeamConversation from "../components/studio/CustomTeamConversation";
+import TeamClassificationBadge from "../components/studio/TeamClassificationBadge";
+import TeamStudio from "../components/studio/TeamStudio";
 import AgentTeamCard from "../components/strategy/AgentTeamCard";
 import PremadeTeamBrowser from "../components/strategy/PremadeTeamBrowser";
 import SavedTeamsPanel from "../components/strategy/SavedTeamsPanel";
 import StrategyChat from "../components/strategy/StrategyChat";
 import TeamComparison from "../components/strategy/TeamComparison";
 import TeamVisualizationView from "../components/visualization/TeamVisualizationView";
+import { useCustomTeamStore } from "../stores/customTeamStore";
 import { useStrategyStore } from "../stores/strategyStore";
 
-type Tab = "build" | "visualize" | "compare";
+type Tab = "build" | "visualize" | "compare" | "custom";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "build", label: "Build" },
   { id: "visualize", label: "Visualize" },
   { id: "compare", label: "Compare" },
+  { id: "custom", label: "Custom Team" },
 ];
 
 function EmptyState({
@@ -64,10 +69,23 @@ export default function StrategyPage() {
     toggleDraftAgent,
   } = useStrategyStore();
 
+  const {
+    compiledTeam: customCompiledTeam,
+    conversation: customConversation,
+    hydrate: hydrateCustom,
+    saveTeam: saveCustomTeam,
+    saving: savingCustom,
+    error: customError,
+  } = useCustomTeamStore();
+
   useEffect(() => {
     void hydrate();
     void loadPremadeCatalog();
   }, [hydrate, loadPremadeCatalog]);
+
+  useEffect(() => {
+    void hydrateCustom();
+  }, [hydrateCustom]);
 
   return (
     <div className="space-y-4">
@@ -195,6 +213,58 @@ export default function StrategyPage() {
             onAction={() => setActiveTab("build")}
           />
         )}
+      </div>
+
+      {/* Custom Team panel */}
+      <div
+        aria-labelledby="tab-custom"
+        hidden={activeTab !== "custom"}
+        id="panel-custom"
+        role="tabpanel"
+      >
+        <div className="space-y-6">
+          <CustomTeamConversation />
+
+          {customCompiledTeam && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-ink/8 bg-white px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div>
+                  <p className="font-semibold text-ink">{customCompiledTeam.name}</p>
+                  <p className="text-[12px] text-ink/50">{customCompiledTeam.description}</p>
+                </div>
+                <TeamClassificationBadge
+                  classification={customCompiledTeam.team_classification}
+                  size="md"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  className="rounded-full border border-ink/10 px-4 py-2 text-sm text-ink/70 hover:bg-slate"
+                  onClick={() => useCustomTeamStore.getState().reset()}
+                  type="button"
+                >
+                  Start over
+                </button>
+                <button
+                  className="rounded-full bg-ink px-5 py-2 text-sm font-semibold text-white hover:bg-ink/80 disabled:opacity-40"
+                  disabled={savingCustom}
+                  onClick={() => void saveCustomTeam(`${customCompiledTeam.name} — Custom`)}
+                  type="button"
+                >
+                  {savingCustom ? "Saving…" : "Save team"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {customError && (
+            <p className="rounded-xl bg-ember/10 px-4 py-3 text-sm text-ember">
+              {customError}
+            </p>
+          )}
+
+          {customConversation?.latest_draft?.topology?.nodes?.length ? <TeamStudio /> : null}
+        </div>
       </div>
     </div>
   );

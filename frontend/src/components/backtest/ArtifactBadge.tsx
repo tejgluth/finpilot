@@ -17,6 +17,9 @@ export default function ArtifactBadge({ artifact }: { artifact: BacktestArtifact
         Snapshot {artifact.execution_snapshot.snapshot_id} | team {artifact.execution_snapshot.effective_team.name} |{" "}
         {artifact.execution_snapshot.data_boundary.mode}
       </div>
+      <div className="mt-3 rounded-2xl bg-slate px-4 py-3 text-sm text-ink/65">
+        Construction: {String(artifact.portfolio_construction.weighting_mode ?? "-")} · top {String(artifact.portfolio_construction.top_n_holdings ?? artifact.portfolio_construction.top_n_target ?? "-")} · max {String(artifact.portfolio_construction.max_position_pct ?? "-")}%
+      </div>
       <button className="mt-4 rounded-full bg-ink px-4 py-2 text-sm text-white" onClick={() => void copyConfig()}>
         Copy config JSON
       </button>

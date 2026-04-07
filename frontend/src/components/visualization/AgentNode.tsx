@@ -7,6 +7,7 @@ import type { VisualizationNode } from "../../lib/teamVisualization/types";
 const ROLE_ACCENT: Record<string, string> = {
   analysis: "border-l-tide",
   decision: "border-l-pine",
+  synthesis: "border-l-gold",
 };
 
 // Diff status label and styling
@@ -79,7 +80,8 @@ export default function AgentNode({ data }: { data: AgentNodeData }) {
     debateModeActive,
   } = data;
 
-  const accentCls = ROLE_ACCENT[role] ?? "border-l-ink/20";
+  const isSynthesis = data.nodeSubtype === "synthesis";
+  const accentCls = isSynthesis ? "border-l-gold" : (ROLE_ACCENT[role] ?? "border-l-ink/20");
   const isDisabled = !enabled;
   const isDecision = role === "decision";
 
@@ -155,7 +157,7 @@ export default function AgentNode({ data }: { data: AgentNodeData }) {
               {label}
             </p>
             <p className="font-mono text-[10px] uppercase tracking-widest text-ink/40">
-              {role === "analysis" ? "Analysis" : "Decision"}
+              {isSynthesis ? "Synthesis" : role === "analysis" ? "Analysis" : "Decision"}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">

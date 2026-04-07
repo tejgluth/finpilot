@@ -39,6 +39,9 @@ export default function BacktestPage() {
               <p className="mt-2">
                 Mode: {result.fidelity_mode} · Cache: {result.cache_policy} · Universe source: {result.universe_resolution_report.source}
               </p>
+              <p className="mt-2">
+                Construction: {String(result.portfolio_construction.weighting_mode ?? "-")} · top {result.top_n_holdings} · candidate pool {String(result.portfolio_construction.candidate_pool_size ?? result.shortlist_size)}
+              </p>
               {result.historical_gap_report.warnings.length ? (
                 <p className="mt-2 text-ember">{result.historical_gap_report.warnings.join(" ")}</p>
               ) : null}

@@ -22,6 +22,8 @@ def _default_model(provider_name: str, llm_settings: "LlmSettings | None") -> st
     if provider_name == "google":
         return env_settings.ai_model or "gemini-2.0-flash"
     if provider_name == "ollama":
+        if llm_settings and llm_settings.model:
+            return llm_settings.model
         return (llm_settings.ollama_model if llm_settings else "") or env_settings.ollama_model
     return "unknown-model"
 
@@ -31,6 +33,28 @@ def _ollama_available(base_url: str) -> bool:
     try:
         response = httpx.get(f"{base_url.rstrip('/')}/api/tags", timeout=0.4)
         return response.is_success
+    except Exception:
+        return False
+
+
+@lru_cache(maxsize=32)
+def _ollama_model_available(base_url: str, model: str) -> bool:
+    try:
+        response = httpx.get(f"{base_url.rstrip('/')}/api/tags", timeout=0.6)
+        response.raise_for_status()
+        payload = response.json()
+        tags = payload.get("models", [])
+        normalized = model.strip().lower()
+        for tag in tags:
+            name = str(tag.get("name", "")).strip().lower()
+            model_name = str(tag.get("model", "")).strip().lower()
+            if normalized in {name, model_name}:
+                return True
+            if normalized and ":" not in normalized and (
+                name.startswith(f"{normalized}:") or model_name.startswith(f"{normalized}:")
+            ):
+                return True
+        return False
     except Exception:
         return False
 
@@ -181,7 +205,8 @@ def get_llm_client(llm_settings: "LlmSettings | None" = None) -> LLMClient:
         available = bool(env_settings.google_api_key)
     elif provider_name == "ollama":
         base_url = (llm_settings.ollama_base_url if llm_settings else "") or env_settings.ollama_base_url
-        available = _ollama_available(base_url)
+        model = _default_model(provider_name, llm_settings)
+        available = _ollama_available(base_url) and _ollama_model_available(base_url, model)
     else:
         available = False
     return LLMClient(

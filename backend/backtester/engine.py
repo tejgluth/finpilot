@@ -29,6 +29,10 @@ from backend.backtester.capabilities import (
 )
 from backend.backtester.costs import compute_transaction_cost
 from backend.backtester.metrics import compute_metrics
+from backend.backtester.portfolio_construction import (
+    build_portfolio_construction_config,
+    construct_target_weights,
+)
 from backend.backtester.universe import HistoricalUniverseResolver, UniverseTimelineResolution
 from backend.data.adapters import YFinanceAdapter
 from backend.database import store_backtest
@@ -52,6 +56,7 @@ from backend.models.backtest_result import (
     UniverseResolutionReport,
 )
 from backend.models.signal import AgentSignal, DebateOutput, PortfolioDecision
+from backend.security.audit_logger import AuditLogger
 from backend.settings.user_settings import UserSettings
 
 
@@ -73,6 +78,7 @@ class ComparisonTarget(BaseModel):
 
 
 class BacktestRequest(BaseModel):
+    input_overrides: list[str] = Field(default_factory=list, exclude=True)
     ticker: str | None = None
     universe_id: str = "current_sp500"
     custom_universe_csv: str | None = None
@@ -91,7 +97,36 @@ class BacktestRequest(BaseModel):
     rebalance_frequency: str = Field(default="monthly", pattern="^(daily|weekly|biweekly|monthly)$")
     selection_count: int = Field(default=10, ge=1, le=100)
     max_positions: int = Field(default=10, ge=1, le=100)
-    weighting_method: str = Field(default="equal_weight", pattern="^(equal_weight|confidence_weighted)$")
+    top_n_holdings: int | None = Field(default=None, ge=1, le=100)
+    candidate_pool_size: int | None = Field(default=None, ge=1, le=250)
+    weighting_method: str = Field(
+        default="equal_weight",
+        pattern="^(equal_weight|confidence_weighted|capped_conviction|risk_budgeted)$",
+    )
+    weighting_mode: str | None = Field(
+        default=None,
+        pattern="^(equal_weight|confidence_weighted|capped_conviction|risk_budgeted)$",
+    )
+    score_normalization_mode: str | None = Field(default=None, pattern="^(linear|power)$")
+    risk_adjustment_mode: str | None = Field(default=None, pattern="^(none|mild_inverse_vol|full_inverse_vol)$")
+    score_exponent: float | None = Field(default=None, ge=1.0, le=4.0)
+    min_conviction_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    min_confidence_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+    min_position_pct: float | None = Field(default=None, ge=0.0, le=100.0)
+    max_position_pct: float | None = Field(default=None, ge=0.0, le=100.0)
+    cash_floor_pct: float | None = Field(default=None, ge=0.0, le=100.0)
+    max_gross_exposure_pct: float | None = Field(default=None, ge=0.0, le=100.0)
+    sector_cap_pct: float | None = Field(default=None, ge=0.0, le=100.0)
+    selection_buffer_pct: float | None = Field(default=None, ge=0.0, le=1.0)
+    turnover_buffer_pct: float | None = Field(default=None, ge=0.0, le=0.95)
+    max_turnover_pct: float | None = Field(default=None, ge=0.0, le=100.0)
+    hold_zone_pct: float | None = Field(default=None, ge=0.0, le=100.0)
+    replacement_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
+    persistence_bonus: float | None = Field(default=None, ge=0.0, le=1.0)
+    min_price: float | None = Field(default=None, ge=0.0)
+    min_avg_dollar_volume_millions: float | None = Field(default=None, ge=0.0)
+    liquidity_lookback_days: int | None = Field(default=None, ge=5, le=252)
+    min_history_days: int | None = Field(default=None, ge=30, le=756)
     fidelity_mode: str = Field(default="full_loop", pattern="^(full_loop|hybrid_shortlist)$")
     cache_policy: str = Field(default="reuse", pattern="^(reuse|fresh)$")
     shortlist_size: int = Field(default=40, ge=1, le=250)
@@ -99,11 +134,28 @@ class BacktestRequest(BaseModel):
     strict_mode: bool | None = None
     walk_forward_enabled: bool = False
 
+    @model_validator(mode="before")
+    @classmethod
+    def capture_input_overrides(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            payload = dict(data)
+            payload["input_overrides"] = list(data.keys())
+            return payload
+        return data
+
     @model_validator(mode="after")
     def normalize_selection(self) -> "BacktestRequest":
+        if self.top_n_holdings is None:
+            self.top_n_holdings = self.max_positions
+        if self.candidate_pool_size is None:
+            self.candidate_pool_size = self.shortlist_size
+        if self.weighting_mode is None:
+            self.weighting_mode = self.weighting_method
+        self.max_positions = self.top_n_holdings
         self.selection_count = min(self.selection_count, self.max_positions)
         if self.fidelity_mode == "hybrid_shortlist":
-            self.shortlist_size = max(self.shortlist_size, self.selection_count)
+            self.candidate_pool_size = max(int(self.candidate_pool_size), self.selection_count)
+            self.shortlist_size = self.candidate_pool_size
         return self
 
     @property
@@ -183,7 +235,7 @@ class BacktestEngine:
             start_date=request.start_date - timedelta(days=370),
             end_date=request.end_date + timedelta(days=5),
         )
-        open_prices, close_prices = _build_price_frames(benchmark_market_data)
+        open_prices, close_prices, _benchmark_volumes = _build_price_frames(benchmark_market_data)
         benchmark_series = close_prices.get(request.benchmark_symbol)
         if benchmark_series is None:
             raise ValueError(f"Unable to load benchmark history for {request.benchmark_symbol}.")
@@ -225,7 +277,7 @@ class BacktestEngine:
             start_date=request.start_date - timedelta(days=370),
             end_date=request.end_date + timedelta(days=5),
         )
-        open_prices, close_prices = _build_price_frames(market_data)
+        open_prices, close_prices, volume_data = _build_price_frames(market_data)
 
         await _notify(progress_callback, {"stage": "simulating_teams", "progress": 34})
         simulations: list[TeamSimulation] = []
@@ -253,6 +305,7 @@ class BacktestEngine:
                         universe_timeline=universe_timeline,
                         open_prices=open_prices,
                         close_prices=close_prices,
+                        volume_data=volume_data,
                         calendar=calendar,
                         rebalance_dates=rebalance_dates,
                     )
@@ -295,6 +348,11 @@ class BacktestEngine:
         primary_event = next((event for event in decision_events if event.team_id == primary_run.team_id), None)
 
         await _notify(progress_callback, {"stage": "writing_artifact", "progress": 90})
+        primary_portfolio_construction = build_portfolio_construction_config(
+            request,
+            user_settings,
+            execution_snapshots[0].effective_team,
+        )
         temporal_features = {
             "mode": request.backtest_mode,
             "fidelity_mode": request.fidelity_mode,
@@ -314,6 +372,7 @@ class BacktestEngine:
                 "fidelity_mode": request.fidelity_mode,
                 "cache_policy": request.cache_policy,
             },
+            portfolio_construction=primary_portfolio_construction.as_dict(),
             metrics=primary_run.metrics,
             execution_snapshot=execution_snapshots[0],
             temporal_features=temporal_features,
@@ -345,6 +404,8 @@ class BacktestEngine:
             fidelity_mode=request.fidelity_mode,
             cache_policy=request.cache_policy,
             shortlist_size=request.shortlist_size,
+            top_n_holdings=request.top_n_holdings or request.max_positions,
+            portfolio_construction=primary_portfolio_construction.as_dict(),
             metrics=primary_run.metrics,
             benchmark_metrics=benchmark_metrics,
             equity_curve=primary_run.equity_curve,
@@ -416,12 +477,14 @@ class BacktestEngine:
         universe_timeline: UniverseTimelineResolution,
         open_prices: dict[str, pd.Series],
         close_prices: dict[str, pd.Series],
+        volume_data: dict[str, pd.Series],
         calendar: pd.Index,
         rebalance_dates: list[pd.Timestamp],
     ) -> TeamSimulation:
         executable_team = _historical_execution_team(base_snapshot.effective_team, profile)
         runtime_settings = _build_backtest_settings(base_settings, executable_team)
-        max_gross_exposure_pct = min(100.0, request.max_positions * runtime_settings.guardrails.max_position_pct)
+        portfolio_config = build_portfolio_construction_config(request, runtime_settings, executable_team)
+        max_gross_exposure_pct = portfolio_config.max_gross_exposure_pct
         simulation_snapshot = build_execution_snapshot(
             mode=request.backtest_mode,
             ticker_or_universe=base_snapshot.ticker_or_universe,
@@ -452,10 +515,18 @@ class BacktestEngine:
         cache_hits = 0
         cache_misses = 0
         cache_writes = 0
+        sector_cache: dict[str, str] = {}
+        cash_history: list[float] = []
+        gross_exposure_history: list[float] = []
+        position_count_history: list[int] = []
+        holding_start_dates: dict[str, pd.Timestamp] = {}
+        completed_holding_periods: list[int] = []
 
         for index, day in enumerate(calendar):
             if day in pending_targets:
                 trade_batch = pending_targets.pop(day)
+                previous_tickers = set(holdings)
+                previous_weights = trade_batch.get("current_weights_pct", {})
                 trade_result = _apply_target_weights(
                     day=day,
                     weights=trade_batch["weights"],
@@ -467,6 +538,8 @@ class BacktestEngine:
                     close_prices=close_prices,
                     slippage_pct=request.slippage_pct,
                     commission_pct=request.commission_pct,
+                    reasons=trade_batch.get("reasons", {}),
+                    previous_weights=previous_weights,
                 )
                 cash = trade_result["cash"]
                 turnover_value += trade_result["turnover_value"]
@@ -479,8 +552,15 @@ class BacktestEngine:
                         holdings=trade_result["holdings_snapshot"],
                     )
                 )
+                current_tickers = set(holdings)
+                for ticker in current_tickers - previous_tickers:
+                    holding_start_dates[ticker] = day
+                for ticker in previous_tickers - current_tickers:
+                    if ticker in holding_start_dates:
+                        completed_holding_periods.append(max(1, (day - holding_start_dates.pop(ticker)).days))
 
             equity = cash
+            invested_value = 0.0
             for ticker, shares in list(holdings.items()):
                 close_price = _close_price(close_prices, ticker, day)
                 if close_price is not None:
@@ -488,7 +568,9 @@ class BacktestEngine:
                 market_price = last_close.get(ticker)
                 if market_price is None:
                     continue
-                equity += shares * market_price
+                market_value = shares * market_price
+                invested_value += market_value
+                equity += market_value
             benchmark_equity = benchmark_close.loc[:day].dropna()
             benchmark_curve = _build_next_open_benchmark_curve(
                 request.initial_cash,
@@ -504,23 +586,49 @@ class BacktestEngine:
                     benchmark_equity=round(benchmark_curve[-1] if benchmark_curve else request.initial_cash, 2),
                 )
             )
+            if equity > 0:
+                cash_history.append((cash / equity) * 100.0)
+                gross_exposure_history.append((invested_value / equity) * 100.0)
+            else:
+                cash_history.append(100.0)
+                gross_exposure_history.append(0.0)
+            position_count_history.append(len(holdings))
 
             if day not in rebalance_dates or index + 1 >= len(calendar):
                 continue
 
             as_of_datetime = _rebalance_close_timestamp(day)
-            universe_tickers = universe_timeline.tickers_for(day.date())
-            if request.fidelity_mode == "hybrid_shortlist" and len(universe_tickers) > request.shortlist_size:
+            current_weights_pct = _current_portfolio_weights_pct(
+                holdings=holdings,
+                cash=cash,
+                close_prices=close_prices,
+                day=day,
+            )
+            universe_tickers = _filter_universe_tickers(
+                tickers=universe_timeline.tickers_for(day.date()),
+                close_prices=close_prices,
+                volume_data=volume_data,
+                day=day,
+                min_price=portfolio_config.min_price,
+                min_avg_dollar_volume_millions=portfolio_config.min_avg_dollar_volume_millions,
+                liquidity_lookback_days=portfolio_config.liquidity_lookback_days,
+                min_history_days=portfolio_config.min_history_days,
+            )
+            rebalance_candidates = sorted(set(universe_tickers) | set(current_weights_pct))
+            if request.fidelity_mode == "hybrid_shortlist" and len(rebalance_candidates) > portfolio_config.candidate_pool_size:
                 ranked_shortlist = _build_shortlist(
-                    universe_tickers=universe_tickers,
+                    universe_tickers=rebalance_candidates,
                     close_prices=close_prices,
+                    volume_data=volume_data,
                     benchmark_window=benchmark_close.loc[:day].dropna(),
                     day=day,
-                    shortlist_size=request.shortlist_size,
+                    shortlist_size=portfolio_config.candidate_pool_size,
                     team_weights=profile.signature.effective_weights,
                 )
             else:
-                ranked_shortlist = [(ticker, 0.0) for ticker in universe_tickers]
+                ranked_shortlist = [(ticker, 0.0) for ticker in rebalance_candidates]
+            existing_holdings = [ticker for ticker in current_weights_pct if ticker not in {name for name, _ in ranked_shortlist}]
+            ranked_shortlist.extend((ticker, 0.0) for ticker in existing_holdings)
 
             shortlist_map = {ticker: (rank + 1, scout_score) for rank, (ticker, scout_score) in enumerate(ranked_shortlist)}
             candidate_payloads = await asyncio.gather(
@@ -542,15 +650,34 @@ class BacktestEngine:
             )
 
             next_day = calendar[index + 1]
-            selected_events = [item.event for item in candidate_payloads if item.event.selected_for_execution]
-            target_weights = _target_weights_from_decisions(
-                evaluations=candidate_payloads,
-                weighting_method=request.weighting_method,
-                max_positions=request.max_positions,
+            sector_cache.update(
+                await _load_sector_lookup_for_tickers(
+                    [payload.event.ticker for payload in candidate_payloads],
+                    sector_cache,
+                )
+            )
+            target_plan = construct_target_weights(
+                events=[payload.event for payload in candidate_payloads],
+                current_weights_pct=current_weights_pct,
+                volatility_by_ticker={
+                    payload.event.ticker: _realized_volatility(close_prices.get(payload.event.ticker), day)
+                    for payload in candidate_payloads
+                },
+                sectors=sector_cache,
+                config=portfolio_config,
             )
             pending_targets[next_day] = {
-                "weights": target_weights,
-                "scores": {event.ticker: event.score for event in selected_events},
+                "weights": target_plan.weights,
+                "scores": {payload.event.ticker: payload.event.score for payload in candidate_payloads},
+                "reasons": {
+                    payload.event.ticker: (
+                        payload.event.selection_reason
+                        if payload.event.target_weight_pct > 0
+                        else payload.event.exclusion_reason
+                    )
+                    for payload in candidate_payloads
+                },
+                "current_weights_pct": current_weights_pct,
             }
             for payload in candidate_payloads:
                 payload.event.execution_date = next_day.date().isoformat()
@@ -562,12 +689,47 @@ class BacktestEngine:
                     if request.cache_policy == "fresh" or payload.event.cache_status == "write":
                         cache_writes += 1
             decision_events.extend(candidate.event for candidate in candidate_payloads)
+            AuditLogger.log(
+                "backtest",
+                "portfolio_rebalance",
+                {
+                    "team_id": simulation_snapshot.effective_team.team_id,
+                    "team_name": simulation_snapshot.effective_team.name,
+                    "version_number": simulation_snapshot.effective_team.version_number,
+                    "rebalance_date": day.date().isoformat(),
+                    "execution_date": next_day.date().isoformat(),
+                    "portfolio_construction": portfolio_config.as_dict(),
+                    "selected_tickers": target_plan.selected_tickers,
+                    "excluded_tickers": target_plan.excluded_tickers,
+                    "replaced_tickers": target_plan.replaced_tickers,
+                    "target_gross_pct": target_plan.target_gross_pct,
+                    "target_cash_pct": target_plan.target_cash_pct,
+                    "turnover_pct": target_plan.turnover_pct,
+                },
+            )
 
+        for ticker, started_at in list(holding_start_dates.items()):
+            completed_holding_periods.append(max(1, (calendar[-1] - started_at).days))
         sectors = await _load_sector_lookup(holdings_snapshots)
         max_sector_concentration = _max_sector_concentration(holdings_snapshots, sectors)
         metrics = compute_metrics([point.strategy_equity for point in equity_curve])
         metrics["turnover_pct"] = round((turnover_value / request.initial_cash) * 100.0, 2)
         metrics["max_sector_concentration_pct"] = round(max_sector_concentration, 2)
+        metrics["average_cash_pct"] = round(sum(cash_history) / max(1, len(cash_history)), 2)
+        metrics["average_gross_exposure_pct"] = round(
+            sum(gross_exposure_history) / max(1, len(gross_exposure_history)),
+            2,
+        )
+        metrics["average_position_count"] = round(
+            sum(position_count_history) / max(1, len(position_count_history)),
+            2,
+        )
+        metrics["average_holding_period_days"] = round(
+            sum(completed_holding_periods) / max(1, len(completed_holding_periods)),
+            2,
+        )
+        metrics["max_name_weight_pct"] = round(_max_name_weight_pct(holdings_snapshots), 2)
+        metrics["average_concentration_hhi"] = round(_average_concentration_hhi(holdings_snapshots), 4)
 
         run = TeamBacktestRun(
             team_id=simulation_snapshot.effective_team.team_id,
@@ -589,12 +751,17 @@ class BacktestEngine:
                     if profile.signature.degraded_agents
                     else "",
                     (
-                        f"Configured max positions ({request.max_positions}) and max position cap "
-                        f"({runtime_settings.guardrails.max_position_pct:.2f}%) limit gross exposure to about "
+                        f"Configured target holdings ({portfolio_config.top_n_holdings}) and max position cap "
+                        f"({portfolio_config.max_position_pct:.2f}%) limit gross exposure to about "
                         f"{max_gross_exposure_pct:.1f}% before any additional macro or risk gating."
                     )
                     if max_gross_exposure_pct < 100.0
                     else "",
+                    (
+                        f"Portfolio construction used {portfolio_config.weighting_mode} weighting with a "
+                        f"{portfolio_config.replacement_threshold:.2f} replacement threshold and "
+                        f"{portfolio_config.hold_zone_pct:.2f}% hold zone."
+                    ),
                 ]
             ),
             warnings=[gap.reason for gap in profile.gaps],
@@ -658,7 +825,7 @@ class BacktestEngine:
                     ticker=ticker,
                     shortlist_rank=scout_rank,
                     shortlisted=True,
-                    selected_for_execution=decision.action == "BUY" and score > 0 and decision.proposed_position_pct > 0,
+                    selected_for_execution=decision.action == "BUY" and score > 0,
                     cache_status="hit",
                     score=score,
                     target_weight_pct=0.0,
@@ -701,8 +868,8 @@ class BacktestEngine:
             team_weights=base_snapshot.effective_team.agent_weights,
             ticker=ticker,
         )
-        score = _decision_score(signals, base_snapshot.effective_team.agent_weights)
-        selected_for_execution = decision.action == "BUY" and score > 0 and decision.proposed_position_pct > 0
+        score = max(0.0, decision.priority_score) if decision.direction_score >= 0 else -decision.priority_score
+        selected_for_execution = decision.action == "BUY" and score > 0
         event = DecisionEvent(
             rebalance_date=as_of_datetime[:10],
             execution_date=as_of_datetime[:10],
@@ -942,7 +1109,7 @@ def _apply_historical_penalties(
     warnings: list[str] = []
     mutated = False
     for signal in signals:
-        support = historical_profile.support_by_agent.get(signal.agent_name)
+        support = historical_profile.support_by_agent.get(signal.source_agent_name or signal.agent_name)
         if not support or support.support_level == "full":
             continue
         factor = DEGRADATION_FACTORS[support.support_level]
@@ -968,6 +1135,7 @@ def _apply_historical_penalties(
         proposed_position_pct=risk.proposed_position_pct,
         agent_weights=team_weights,
         risk_notes=risk.notes if risk.allowed else f"Trade blocked: {risk.notes}",
+        max_data_age_minutes=runtime_settings.data_sources.max_data_age_minutes,
     )
     if not risk.allowed:
         rebuilt_decision.action = "HOLD"
@@ -1026,18 +1194,24 @@ def _download_chunk(chunk: list[str], start_date: date, end_date: date) -> dict[
     return result
 
 
-def _build_price_frames(payload: dict[str, pd.DataFrame]) -> tuple[dict[str, pd.Series], dict[str, pd.Series]]:
+def _build_price_frames(
+    payload: dict[str, pd.DataFrame],
+) -> tuple[dict[str, pd.Series], dict[str, pd.Series], dict[str, pd.Series]]:
     opens: dict[str, pd.Series] = {}
     closes: dict[str, pd.Series] = {}
+    volumes: dict[str, pd.Series] = {}
     for ticker, frame in payload.items():
         lower_columns = {str(column).strip().lower(): column for column in frame.columns}
         open_column = lower_columns.get("open")
         close_column = lower_columns.get("close")
+        volume_column = lower_columns.get("volume")
         if open_column is None or close_column is None:
             continue
         opens[ticker] = pd.to_numeric(frame[open_column], errors="coerce")
         closes[ticker] = pd.to_numeric(frame[close_column], errors="coerce")
-    return opens, closes
+        if volume_column is not None:
+            volumes[ticker] = pd.to_numeric(frame[volume_column], errors="coerce")
+    return opens, closes, volumes
 
 
 def _rebalance_dates(calendar: pd.Index, frequency: str) -> list[pd.Timestamp]:
@@ -1068,6 +1242,7 @@ def _build_shortlist(
     *,
     universe_tickers: list[str],
     close_prices: dict[str, pd.Series],
+    volume_data: dict[str, pd.Series],
     benchmark_window: pd.Series,
     day: pd.Timestamp,
     shortlist_size: int,
@@ -1080,6 +1255,11 @@ def _build_shortlist(
             continue
         momentum_score = _momentum_score(asset_window, benchmark_window)
         technical_score = _technical_score(asset_window)
+        liquidity_score = _liquidity_score(
+            price_window=asset_window,
+            volume_window=volume_data.get(ticker, pd.Series(dtype=float)).loc[:day].dropna(),
+        )
+        volatility_score = _volatility_scout_score(asset_window)
         numerator = 0.0
         denominator = 0.0
         if team_weights.get("momentum", 0) > 0:
@@ -1088,7 +1268,8 @@ def _build_shortlist(
         if team_weights.get("technicals", 0) > 0:
             numerator += technical_score * float(team_weights["technicals"])
             denominator += float(team_weights["technicals"])
-        score = numerator / denominator if denominator > 0 else (momentum_score + technical_score) / 2.0
+        core_score = numerator / denominator if denominator > 0 else (momentum_score + technical_score) / 2.0
+        score = (core_score * 0.75) + (liquidity_score * 0.15) + (volatility_score * 0.10)
         if score > -0.2:
             ranked.append((ticker, round(score, 6)))
     ranked.sort(key=lambda item: item[1], reverse=True)
@@ -1130,6 +1311,39 @@ def _technical_score(asset_window: pd.Series) -> float:
     elif rsi > 75:
         score -= 0.15
     return _clamp(score)
+
+
+def _liquidity_score(price_window: pd.Series, volume_window: pd.Series) -> float:
+    if price_window.empty or volume_window.empty:
+        return 0.0
+    merged = pd.concat([price_window.rename("price"), volume_window.rename("volume")], axis=1).dropna().tail(30)
+    if merged.empty:
+        return 0.0
+    avg_dollar_volume = float((merged["price"] * merged["volume"]).mean())
+    if avg_dollar_volume >= 100_000_000:
+        return 0.25
+    if avg_dollar_volume >= 50_000_000:
+        return 0.15
+    if avg_dollar_volume >= 25_000_000:
+        return 0.05
+    return -0.1
+
+
+def _volatility_scout_score(asset_window: pd.Series) -> float:
+    closes = asset_window.dropna()
+    if len(closes) < 40:
+        return 0.0
+    returns = closes.pct_change().dropna().tail(60)
+    if returns.empty:
+        return 0.0
+    annualized = float(returns.std() * (252**0.5))
+    if annualized <= 0.20:
+        return 0.15
+    if annualized <= 0.35:
+        return 0.05
+    if annualized <= 0.50:
+        return -0.02
+    return -0.12
 
 
 def _period_return(series: pd.Series, lookback: int) -> float | None:
@@ -1261,7 +1475,11 @@ def _apply_target_weights(
     close_prices: dict[str, pd.Series],
     slippage_pct: float,
     commission_pct: float,
+    reasons: dict[str, str] | None = None,
+    previous_weights: dict[str, float] | None = None,
 ) -> dict[str, Any]:
+    reasons = reasons or {}
+    previous_weights = previous_weights or {}
     execution_prices = {
         ticker: _execution_price(open_prices, close_prices, ticker, day)
         for ticker in set(holdings) | set(weights)
@@ -1309,11 +1527,13 @@ def _apply_target_weights(
                 "fill_price": round(price, 4),
                 "notional_usd": round(abs(delta_value), 2),
                 "cost_usd": round(cost, 2),
+                "previous_weight_pct": round(float(previous_weights.get(ticker, 0.0)), 2),
                 "weight_pct": round((weights.get(ticker, 0.0) * 100.0), 2),
                 "team_id": team.team_id,
                 "team_name": team.name,
                 "version_number": team.version_number,
                 "score": round(float(scores.get(ticker, 0.0)), 4),
+                "reason": reasons.get(ticker, ""),
             }
         )
     holdings_snapshot = [
@@ -1337,12 +1557,106 @@ def _decision_score(signals: list[AgentSignal], agent_weights: dict[str, int]) -
     score = 0.0
     for signal in signals:
         direction = 1.0 if signal.action == "BUY" else -1.0 if signal.action == "SELL" else 0.0
-        weight = float(agent_weights.get(signal.agent_name, 50))
+        weight = float(
+            agent_weights.get(
+                signal.agent_name,
+                agent_weights.get(
+                    signal.agent_name.lower(),
+                    agent_weights.get(signal.source_agent_name or "", 50),
+                ),
+            )
+        )
         total_weight += weight
         score += direction * signal.final_confidence * weight
     if total_weight <= 0:
         return 0.0
     return round(score / total_weight, 6)
+
+
+def _current_portfolio_weights_pct(
+    *,
+    holdings: dict[str, float],
+    cash: float,
+    close_prices: dict[str, pd.Series],
+    day: pd.Timestamp,
+) -> dict[str, float]:
+    position_values: dict[str, float] = {}
+    portfolio_value = cash
+    for ticker, shares in holdings.items():
+        close_price = _close_price(close_prices, ticker, day)
+        if close_price is None:
+            continue
+        position_value = shares * close_price
+        position_values[ticker] = position_value
+        portfolio_value += position_value
+    if portfolio_value <= 0:
+        return {}
+    return {
+        ticker: round((value / portfolio_value) * 100.0, 4)
+        for ticker, value in position_values.items()
+    }
+
+
+def _filter_universe_tickers(
+    *,
+    tickers: list[str],
+    close_prices: dict[str, pd.Series],
+    volume_data: dict[str, pd.Series],
+    day: pd.Timestamp,
+    min_price: float,
+    min_avg_dollar_volume_millions: float,
+    liquidity_lookback_days: int,
+    min_history_days: int,
+) -> list[str]:
+    filtered: list[str] = []
+    fallback: list[str] = []
+    for ticker in tickers:
+        prices = close_prices.get(ticker, pd.Series(dtype=float)).loc[:day].dropna()
+        volumes = volume_data.get(ticker, pd.Series(dtype=float)).loc[:day].dropna()
+        if len(prices) >= 40 and float(prices.iloc[-1]) >= min_price:
+            fallback.append(ticker)
+        if len(prices) < min_history_days:
+            continue
+        last_price = float(prices.iloc[-1])
+        if last_price < min_price:
+            continue
+        merged = pd.concat([prices.rename("price"), volumes.rename("volume")], axis=1).dropna().tail(liquidity_lookback_days)
+        if merged.empty:
+            continue
+        avg_dollar_volume = float((merged["price"] * merged["volume"]).mean()) / 1_000_000.0
+        if avg_dollar_volume < min_avg_dollar_volume_millions:
+            continue
+        filtered.append(ticker)
+    return filtered or fallback
+
+
+def _realized_volatility(series: pd.Series | None, day: pd.Timestamp) -> float:
+    if series is None:
+        return 0.25
+    returns = series.loc[:day].dropna().pct_change().dropna().tail(60)
+    if returns.empty:
+        return 0.25
+    return float(returns.std() * (252**0.5))
+
+
+def _max_name_weight_pct(holdings_over_time: list[HoldingsSnapshot]) -> float:
+    max_weight = 0.0
+    for snapshot in holdings_over_time:
+        for holding in snapshot.holdings:
+            max_weight = max(max_weight, float(holding.get("weight_pct", 0.0)))
+    return max_weight
+
+
+def _average_concentration_hhi(holdings_over_time: list[HoldingsSnapshot]) -> float:
+    if not holdings_over_time:
+        return 0.0
+    values: list[float] = []
+    for snapshot in holdings_over_time:
+        weights = [float(holding.get("weight_pct", 0.0)) / 100.0 for holding in snapshot.holdings]
+        if not weights:
+            continue
+        values.append(sum(weight * weight for weight in weights))
+    return sum(values) / max(1, len(values))
 
 
 def _build_next_open_benchmark_curve(
@@ -1420,6 +1734,28 @@ async def _load_sector_lookup(holdings_over_time: list[HoldingsSnapshot]) -> dic
         ticker: str(profile.get("sector") or "unknown")
         for ticker, profile in zip(tickers, profiles, strict=True)
     }
+
+
+async def _load_sector_lookup_for_tickers(
+    tickers: list[str],
+    existing: dict[str, str] | None = None,
+) -> dict[str, str]:
+    from backend.data.adapters import YFinanceAdapter
+
+    existing = existing or {}
+    missing = [ticker for ticker in sorted(set(tickers)) if ticker not in existing]
+    if not missing:
+        return dict(existing)
+    adapter = YFinanceAdapter()
+    profiles = await asyncio.gather(*[adapter.get_security_profile(ticker) for ticker in missing])
+    resolved = dict(existing)
+    resolved.update(
+        {
+            ticker: str(profile.get("sector") or "unknown")
+            for ticker, profile in zip(missing, profiles, strict=True)
+        }
+    )
+    return resolved
 
 
 def _max_sector_concentration(holdings_over_time: list[HoldingsSnapshot], sectors: dict[str, str]) -> float:

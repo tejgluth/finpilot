@@ -63,16 +63,64 @@ export interface BacktestSettings {
   default_slippage_pct: number;
   default_commission_pct: number;
   default_max_position_pct: number;
+  default_min_position_pct: number;
+  default_cash_floor_pct: number;
+  default_max_gross_exposure_pct: number;
   default_lookback_years: number;
+  default_universe_id: string;
+  default_min_price: number;
+  default_min_avg_dollar_volume_millions: number;
+  default_liquidity_lookback_days: number;
+  default_min_history_days: number;
   default_fidelity_mode: "full_loop" | "hybrid_shortlist";
   default_cache_policy: "reuse" | "fresh";
+  default_candidate_pool_size: number;
   default_shortlist_size: number;
+  default_top_n_holdings: number;
+  default_min_conviction_score: number;
+  default_weighting_mode: "equal_weight" | "confidence_weighted" | "capped_conviction" | "risk_budgeted";
+  default_score_normalization_mode: "linear" | "power";
+  default_score_exponent: number;
+  default_risk_adjustment_mode: "none" | "mild_inverse_vol" | "full_inverse_vol";
+  default_selection_buffer_pct: number;
+  default_replacement_threshold: number;
+  default_hold_zone_pct: number;
+  default_turnover_buffer_pct: number;
+  default_max_turnover_pct: number;
+  default_sector_cap_pct: number;
+  default_persistence_bonus: number;
   max_parallel_historical_evaluations: number;
   max_cost_per_backtest_usd: number;
   max_tokens_per_backtest: number;
   walk_forward_enabled: boolean;
   walk_forward_window_months: number;
   show_transaction_costs_separately: boolean;
+}
+
+export interface PortfolioConstructionProfile {
+  concentration_style: "concentrated" | "balanced" | "diversified";
+  sizing_style: "aggressive" | "balanced" | "defensive";
+  turnover_style: "low" | "medium" | "high";
+  cash_policy: "fully_invested" | "cash_optional" | "defensive_cash";
+  sector_exposure_mode: "capped" | "sector_neutral" | "unconstrained";
+  weighting_mode: "capped_conviction" | "risk_budgeted" | "equal_weight" | "confidence_weighted";
+  risk_adjustment_mode: "none" | "mild_inverse_vol" | "full_inverse_vol";
+  rebalance_frequency_preference: "weekly" | "biweekly" | "monthly";
+  candidate_pool_size: number;
+  top_n_target: number;
+  min_conviction_score: number;
+  min_position_pct: number;
+  max_position_pct: number;
+  cash_floor_pct: number;
+  max_gross_exposure_pct: number;
+  sector_cap_pct: number;
+  score_exponent: number;
+  selection_buffer_pct: number;
+  turnover_buffer_pct: number;
+  max_turnover_pct: number;
+  hold_zone_pct: number;
+  replacement_threshold: number;
+  persistence_bonus: number;
 }
 
 export interface GuardrailConfig {
@@ -235,6 +283,7 @@ export interface TeamDraft {
   asset_universe: string;
   sector_exclusions: string[];
   team_overrides: Record<string, unknown>;
+  portfolio_construction: PortfolioConstructionProfile;
 }
 
 export interface StrategyDraft {
@@ -281,9 +330,19 @@ export interface CompiledTeam {
   asset_universe: string;
   sector_exclusions: string[];
   team_overrides: Record<string, unknown>;
+  portfolio_construction: PortfolioConstructionProfile;
   default_team_reference: string;
   compiler_version: string;
   validation_report: ValidationReport;
+  // Custom team fields (optional for backward compat)
+  team_classification?: TeamClassification;
+  topology?: TeamTopology | null;
+  behavior_rules?: TeamBehaviorRules | null;
+  execution_profile?: TeamExecutionProfile;
+  /** Compiled specs for all non-data-ingestion nodes (custom reasoning graph) */
+  compiled_reasoning_specs?: Record<string, CompiledReasoningSpec>;
+  topology_hash?: string | null;
+  prompt_override_present?: boolean;
 }
 
 export interface TeamComparison {
@@ -308,6 +367,12 @@ export interface TeamVersion {
   compiled_team: CompiledTeam;
   content_hash: string;
   status: "draft" | "active" | "archived";
+  // Custom team metadata (optional for backward compat)
+  creation_source?: "conversation" | "premade" | "custom_conversation" | "studio_edit" | "patch";
+  team_classification?: TeamClassification;
+  topology_hash?: string | null;
+  prompt_override_present?: boolean;
+  supported_execution_modes?: string[];
 }
 
 export interface StrategyConversation {
@@ -345,6 +410,8 @@ export interface ExecutionSnapshot {
   benchmark_symbol: string;
   strict_temporal_mode: boolean;
   notes: string[];
+  team_classification?: TeamClassification;
+  prompt_override_present?: boolean;
 }
 
 export interface DataCitation {
@@ -357,6 +424,8 @@ export interface DataCitation {
 export interface AgentSignal {
   ticker: string;
   agent_name: string;
+  source_agent_name?: string | null;
+  graph_node_id?: string | null;
   action: "BUY" | "SELL" | "HOLD";
   raw_confidence: number;
   final_confidence: number;
@@ -381,6 +450,7 @@ export interface BacktestArtifact {
   data_hash: string;
   config_snapshot: Record<string, unknown>;
   transaction_cost_model: Record<string, unknown>;
+  portfolio_construction: Record<string, unknown>;
   created_at: string;
   benchmark_symbol: string;
   artifact_path: string;
@@ -449,6 +519,7 @@ export interface DecisionEvent {
   selected_for_execution: boolean;
   cache_status: string;
   score: number;
+  current_weight_pct: number;
   target_weight_pct: number;
   signals: AgentSignal[];
   bull_case: DebateOutput | null;
@@ -457,6 +528,11 @@ export interface DecisionEvent {
     ticker: string;
     action: "BUY" | "SELL" | "HOLD";
     confidence: number;
+    direction_score: number;
+    conviction_score: number;
+    priority_score: number;
+    agreement_score: number;
+    coverage_score: number;
     reasoning: string;
     cited_agents: string[];
     bull_points_used: string[];
@@ -464,6 +540,9 @@ export interface DecisionEvent {
     risk_notes: string;
     proposed_position_pct: number;
   };
+  selection_reason: string;
+  exclusion_reason: string;
+  construction_details: Record<string, unknown>;
   warnings: string[];
 }
 
@@ -530,6 +609,8 @@ export interface BacktestResult {
   fidelity_mode: "full_loop" | "hybrid_shortlist";
   cache_policy: "reuse" | "fresh";
   shortlist_size: number;
+  top_n_holdings: number;
+  portfolio_construction: Record<string, unknown>;
   metrics: Record<string, number>;
   benchmark_metrics: Record<string, number>;
   equity_curve: EquityPoint[];
@@ -642,6 +723,252 @@ export interface AuditEntry {
   [key: string]: unknown;
 }
 
+// ── Custom Team Types ────────────────────────────────────────────────────────
+
+// NodeFamily is free-text for custom architectures; kept as string alias
+export type NodeFamily = string;
+export type TeamClassification = "premade" | "validated_custom" | "experimental_custom";
+export type StudioMode = "view" | "edit" | "expert";
+
+export interface VisualPosition {
+  x: number;
+  y: number;
+}
+
+export interface PromptOverride {
+  override_id: string;
+  node_id: string;
+  label: string;
+  system_prompt_text: string;
+  created_at: string;
+  warning: string;
+}
+
+export interface CapabilityBinding {
+  capability_id: string;
+  label: string;
+  description: string;
+  source_ids: string[];
+  required: boolean;
+  configured: boolean;
+  strict_backtest_supported: boolean;
+  supported_modes: string[];
+  detail: string;
+}
+
+export interface NodePromptContract {
+  system_prompt_text: string;
+  allowed_evidence: string[];
+  forbidden_inference_rules: string[];
+  required_output_schema: string;
+  operator_notes: string;
+}
+
+export interface NodeModeEligibility {
+  analyze: boolean;
+  paper: boolean;
+  live: boolean;
+  backtest_strict: boolean;
+  backtest_experimental: boolean;
+  reasons: string[];
+}
+
+export interface ConversationRequirement {
+  requirement_id: string;
+  label: string;
+  question: string;
+  value: string;
+  status: "resolved" | "open";
+  source: "user" | "llm" | "system";
+}
+
+export interface CapabilityGap {
+  capability_id: string;
+  label: string;
+  detail: string;
+  source_ids: string[];
+  status: "configured" | "available_but_disabled" | "missing_key" | "requires_new_source";
+  can_proceed_degraded: boolean;
+  recommended_action: string;
+}
+
+export interface ReasoningOutput {
+  node_id: string;
+  node_name: string;
+  recommendation: string;
+  confidence: number;
+  reasoning: string;
+  structured: Record<string, unknown>;
+  cited_input_ids: string[];
+}
+
+export interface CompiledReasoningSpec {
+  node_id: string;
+  node_name: string;
+  node_kind: string;
+  system_prompt: string;
+  parameters: Record<string, unknown>;
+  input_node_ids: string[];
+  output_schema: string;
+  is_terminal: boolean;
+  is_data_ingestion: boolean;
+  data_domain: string | null;
+}
+
+export interface TeamNode {
+  node_id: string;
+  display_name: string;
+  node_family: NodeFamily;
+  agent_type: string | null;
+  /** data_domain marks this as a data-ingestion node. Must be one of the 7 known domains. */
+  data_domain?: string | null;
+  /** First-class system prompt for this node. For reasoning nodes defines full behavior. */
+  system_prompt?: string;
+  /** Per-node runtime parameters (temperature, max_tokens, output_schema, is_terminal, etc.) */
+  parameters?: Record<string, unknown>;
+  /** Free-text descriptor for custom nodes (e.g. "ranking_layer", "consensus_filter") */
+  node_kind?: string;
+  role_description: string;
+  enabled: boolean;
+  visual_position: VisualPosition;
+  upstream_node_ids: string[];
+  downstream_node_ids: string[];
+  prompt_pack_id: string | null;
+  prompt_pack_version: string | null;
+  variant_id: string;
+  modifiers: Record<string, unknown>;
+  prompt_override: PromptOverride | null;
+  capability_bindings: CapabilityBinding[];
+  prompt_contract: NodePromptContract | null;
+  mode_eligibility: NodeModeEligibility;
+  influence_weight: number;
+  influence_group: string | null;
+  owned_sources: string[];
+  freshness_limit_minutes: number;
+  lookback_config: Record<string, number>;
+  backtest_strict_eligible: boolean;
+  backtest_experimental_eligible: boolean;
+  paper_eligible: boolean;
+  live_eligible: boolean;
+  validation_errors: string[];
+  validation_warnings: string[];
+}
+
+export interface TeamEdge {
+  edge_id: string;
+  source_node_id: string;
+  target_node_id: string;
+  label: string;
+  edge_type: "signal" | "veto" | "gate" | "synthesis" | "reasoning" | string;
+}
+
+export interface TeamTopology {
+  topology_id: string;
+  nodes: TeamNode[];
+  edges: TeamEdge[];
+}
+
+export interface ConsensusRule {
+  rule_id: string;
+  description: string;
+  required_agent_types: string[];
+  consensus_type: string;
+  min_agreement_pct: number;
+  veto_on_fail: boolean;
+}
+
+export interface TeamBehaviorRules {
+  consensus_rules: ConsensusRule[];
+  gate_conditions: string[];
+  routing_notes: string;
+  debate_enabled: boolean;
+  min_confidence_threshold: number;
+}
+
+export interface TeamExecutionProfile {
+  team_classification: TeamClassification;
+  has_prompt_override: boolean;
+  has_synthesis_nodes: boolean;
+  backtest_strict_eligible: boolean;
+  backtest_experimental_eligible: boolean;
+  paper_eligible: boolean;
+  live_eligible: boolean;
+  ineligibility_reasons: string[];
+  experimental_warnings: string[];
+}
+
+export interface TeamValidationResult {
+  valid: boolean;
+  team_classification: TeamClassification;
+  errors: string[];
+  warnings: string[];
+  normalized_fields: string[];
+  execution_profile: TeamExecutionProfile;
+  topology_errors: string[];
+  node_results: Record<string, string[]>;
+}
+
+export interface ArchitectureIntent extends StrategyPreferences {
+  desired_complexity: "simple" | "moderate" | "complex";
+  desired_analysis_node_count: number | null;
+  wants_synthesis_stage: boolean;
+  wants_debate_stage: boolean;
+  consensus_rules_natural_language: string[];
+  manual_control_level: "low" | "medium" | "high";
+  wants_prompt_editing: boolean;
+  custom_team_name: string | null;
+  custom_team_description: string | null;
+}
+
+export interface ArchitectureDraft {
+  draft_id: string;
+  conversation_id: string;
+  intent: ArchitectureIntent;
+  topology: TeamTopology;
+  behavior_rules: TeamBehaviorRules;
+  rationale: string;
+  follow_up_question: string | null;
+  unresolved_items: string[];
+  proposed_name: string;
+  proposed_description: string;
+  validation_result: TeamValidationResult | null;
+}
+
+export interface ArchitectureConversationTurn {
+  assistant_message: string;
+  resolved_requirements: ConversationRequirement[];
+  open_questions: ConversationRequirement[];
+  graph_change_summary: string[];
+  capability_gaps: CapabilityGap[];
+  mode_compatibility: NodeModeEligibility;
+  validation_state: TeamValidationResult | null;
+}
+
+export interface ArchitecturePatch {
+  patch_id: string;
+  source_team_id: string;
+  source_version_number: number;
+  patch_description: string;
+  node_changes: Record<string, unknown>[];
+  edge_changes: Record<string, unknown>[];
+  behavior_changes: Record<string, unknown>[];
+  requires_recompile: boolean;
+  user_confirmed: boolean;
+  created_at: string;
+}
+
+export interface CustomConversation {
+  conversation_id: string;
+  created_at: string;
+  updated_at: string;
+  status: "collecting_requirements" | "draft_ready" | "compiled" | "finalized";
+  messages: StrategyMessage[];
+  intent: ArchitectureIntent;
+  latest_draft: ArchitectureDraft | null;
+  latest_turn: ArchitectureConversationTurn;
+  final_team_version_id: string | null;
+}
+
 // ── Premade Team Catalog ────────────────────────────────────────────────────
 
 export type TeamComplexity = "beginner" | "intermediate" | "advanced";
@@ -658,6 +985,7 @@ export interface PremadeTeamTemplate {
   weights: Record<string, number>;
   agent_variants: Record<string, string>;
   team_overrides: Record<string, unknown>;
+  portfolio_construction: PortfolioConstructionProfile;
   excluded_sectors: string[];
   complexity: TeamComplexity;
   is_default: boolean;

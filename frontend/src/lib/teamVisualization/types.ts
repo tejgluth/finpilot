@@ -26,6 +26,18 @@ export interface VisualizationNode {
   defaultWeight: number | null;
   /** Assigned by layout.ts; starts as { x: 0, y: 0 } from transform.ts */
   position: { x: number; y: number };
+  /** Studio-only: column placement hint for the studio layout */
+  nodeSubtype?: "synthesis" | "reasoning" | "terminal";
+  /** Studio-only: raw topology node_id (differs from id for custom nodes) */
+  nodeId?: string;
+  /** Studio-only: topology node family */
+  nodeFamily?: string;
+  /** Studio-only: per-node validation errors from TeamValidationResult */
+  validationErrors?: string[];
+  /** Studio-only: per-node validation warnings */
+  validationWarnings?: string[];
+  /** Studio-only: true when a prompt override is set on this node */
+  hasPromptOverride?: boolean;
 }
 
 export type EdgeStyle = "solid" | "dashed";

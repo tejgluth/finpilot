@@ -58,11 +58,15 @@ class DecisionEvent(BaseModel):
     selected_for_execution: bool = False
     cache_status: str = "miss"
     score: float = 0.0
+    current_weight_pct: float = 0.0
     target_weight_pct: float = 0.0
     signals: list[AgentSignal] = Field(default_factory=list)
     bull_case: DebateOutput | None = None
     bear_case: DebateOutput | None = None
     decision: PortfolioDecision
+    selection_reason: str = ""
+    exclusion_reason: str = ""
+    construction_details: dict = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
 
 
@@ -90,6 +94,7 @@ class BacktestArtifact(BaseModel):
     data_hash: str
     config_snapshot: dict = Field(default_factory=dict)
     transaction_cost_model: dict = Field(default_factory=dict)
+    portfolio_construction: dict = Field(default_factory=dict)
     created_at: str
     benchmark_symbol: str = "SPY"
     artifact_path: str = ""
@@ -141,6 +146,8 @@ class BacktestResult(BaseModel):
     fidelity_mode: str = "full_loop"
     cache_policy: str = "reuse"
     shortlist_size: int = 0
+    top_n_holdings: int = 0
+    portfolio_construction: dict = Field(default_factory=dict)
     metrics: dict = Field(default_factory=dict)
     benchmark_metrics: dict = Field(default_factory=dict)
     equity_curve: list[EquityPoint] = Field(default_factory=list)

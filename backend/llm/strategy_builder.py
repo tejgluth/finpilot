@@ -25,6 +25,7 @@ from backend.models.agent_team import (
     CompiledTeam,
     DataBoundary,
     ExecutionSnapshot,
+    PortfolioConstructionProfile,
     PremadeTeamTemplate,
     StrategyConversation,
     StrategyDraft,
@@ -146,6 +147,7 @@ def extract_preferences(messages: list[StrategyMessage]) -> StrategyPreferences:
     if not user_text:
         prefs.unresolved_items = ["risk_level", "time_horizon", "primary_factors"]
         return prefs
+    user_text = user_text.lower()
     normalized_user_text = re.sub(r"[^a-z0-9.\s%-]+", " ", user_text)
 
     sentences = [chunk.strip() for chunk in re.split(r"[.!?\n]+", user_text) if chunk.strip()]
@@ -165,13 +167,16 @@ def extract_preferences(messages: list[StrategyMessage]) -> StrategyPreferences:
         if token in user_text:
             prefs.risk_level = level
     horizon_map = {
+        "short": "short",
         "short term": "short",
         "short-term": "short",
         "swing": "short",
         "day trade": "short",
+        "medium": "medium",
         "medium term": "medium",
         "medium-term": "medium",
         "intermediate": "medium",
+        "long": "long",
         "long term": "long",
         "long-term": "long",
         "compounder": "long",
@@ -622,6 +627,100 @@ def _compile_agent_spec(
     )
 
 
+def _build_portfolio_profile(
+    risk_level: str,
+    time_horizon: str,
+    overrides: dict[str, Any] | None = None,
+) -> PortfolioConstructionProfile:
+    profile = PortfolioConstructionProfile()
+    risk_level = risk_level.strip().lower()
+    time_horizon = time_horizon.strip().lower()
+
+    if risk_level == "conservative":
+        profile = profile.model_copy(
+            update={
+                "concentration_style": "diversified",
+                "sizing_style": "defensive",
+                "turnover_style": "low",
+                "cash_policy": "defensive_cash",
+                "candidate_pool_size": 70,
+                "top_n_target": 12,
+                "min_conviction_score": 0.20,
+                "max_position_pct": 8.0,
+                "cash_floor_pct": 10.0,
+                "sector_cap_pct": 25.0,
+                "score_exponent": 1.35,
+                "selection_buffer_pct": 0.6,
+                "turnover_buffer_pct": 0.45,
+                "max_turnover_pct": 18.0,
+                "hold_zone_pct": 1.5,
+                "replacement_threshold": 0.08,
+                "persistence_bonus": 0.05,
+            }
+        )
+    elif risk_level == "aggressive":
+        profile = profile.model_copy(
+            update={
+                "concentration_style": "concentrated",
+                "sizing_style": "aggressive",
+                "turnover_style": "high",
+                "cash_policy": "fully_invested",
+                "risk_adjustment_mode": "none",
+                "candidate_pool_size": 50,
+                "top_n_target": 8,
+                "min_conviction_score": 0.15,
+                "min_position_pct": 3.0,
+                "max_position_pct": 18.0,
+                "cash_floor_pct": 2.0,
+                "sector_cap_pct": 45.0,
+                "score_exponent": 2.0,
+                "selection_buffer_pct": 0.35,
+                "turnover_buffer_pct": 0.2,
+                "max_turnover_pct": 40.0,
+                "hold_zone_pct": 0.75,
+                "replacement_threshold": 0.04,
+                "persistence_bonus": 0.02,
+            }
+        )
+
+    if time_horizon == "short":
+        profile = profile.model_copy(
+            update={
+                "turnover_style": "high",
+                "rebalance_frequency_preference": "weekly",
+                "selection_buffer_pct": min(profile.selection_buffer_pct, 0.4),
+                "turnover_buffer_pct": min(profile.turnover_buffer_pct, 0.2),
+                "hold_zone_pct": min(profile.hold_zone_pct, 0.75),
+                "replacement_threshold": min(profile.replacement_threshold, 0.04),
+            }
+        )
+    elif time_horizon == "long":
+        profile = profile.model_copy(
+            update={
+                "turnover_style": "low",
+                "rebalance_frequency_preference": "monthly",
+                "candidate_pool_size": profile.candidate_pool_size + 10,
+                "selection_buffer_pct": max(profile.selection_buffer_pct, 0.6),
+                "turnover_buffer_pct": max(profile.turnover_buffer_pct, 0.45),
+                "hold_zone_pct": max(profile.hold_zone_pct, 1.5),
+                "replacement_threshold": max(profile.replacement_threshold, 0.08),
+                "persistence_bonus": max(profile.persistence_bonus, 0.05),
+            }
+        )
+    else:
+        profile = profile.model_copy(update={"rebalance_frequency_preference": "biweekly"})
+
+    if overrides:
+        portfolio_overrides = {
+            key: value
+            for key, value in overrides.items()
+            if key in PortfolioConstructionProfile.model_fields
+        }
+        if portfolio_overrides:
+            profile = profile.model_copy(update=portfolio_overrides)
+    return profile
+
+
 def compile_team(team_draft: TeamDraft, preferences: StrategyPreferences) -> CompiledTeam:
     enabled = [agent for agent in team_draft.enabled_agents if agent in EXECUTABLE_ANALYSIS_AGENTS]
     if not enabled:
@@ -658,6 +757,11 @@ def compile_team(team_draft: TeamDraft, preferences: StrategyPreferences) -> Com
         asset_universe=team_draft.asset_universe,
         sector_exclusions=team_draft.sector_exclusions,
         team_overrides=team_draft.team_overrides,
+        portfolio_construction=_build_portfolio_profile(
+            team_draft.risk_level,
+            team_draft.time_horizon,
+            overrides=team_draft.team_overrides,
+        ).model_copy(update=team_draft.portfolio_construction.model_dump(mode="python", exclude_unset=True)),
         validation_report=ValidationReport(
             valid=True,
             warnings=warnings,
@@ -705,6 +809,7 @@ def default_compiled_team() -> CompiledTeam:
             "min_confidence_threshold": 0.55,
             "backtest_mode_default": "backtest_strict",
         },
+        portfolio_construction=_build_portfolio_profile("moderate", "medium"),
     )
     compiled = compile_team(draft, base_preferences)
     compiled.team_id = DEFAULT_TEAM_ID
@@ -799,6 +904,7 @@ def compile_from_template(template: PremadeTeamTemplate) -> CompiledTeam:
         time_horizon=template.time_horizon,
         sector_exclusions=template.excluded_sectors,
         team_overrides=dict(template.team_overrides),
+        portfolio_construction=template.portfolio_construction,
     )
     compiled = compile_team(draft, prefs)
     compiled.team_id = template.team_id
@@ -949,6 +1055,7 @@ async def save_team_version(
     *,
     conversation_id: str | None,
     label: str,
+    creation_source: str = "conversation",
 ) -> TeamVersion:
     if compiled_team.team_id == DEFAULT_TEAM_ID:
         raise ValueError("Default team cannot be overwritten")
@@ -958,6 +1065,10 @@ async def save_team_version(
     next_version = (max((item.version_number for item in existing), default=0) + 1)
     compiled_payload = compiled_team.model_copy(deep=True)
     compiled_payload.version_number = next_version
+    # Validate creation_source literal
+    from typing import Literal, get_args
+    _valid_sources = ("conversation", "premade", "custom_conversation", "studio_edit", "patch")
+    safe_source = creation_source if creation_source in _valid_sources else "conversation"
     version = TeamVersion.from_compiled(
         compiled_payload,
         created_at=_now_iso(),
@@ -965,6 +1076,7 @@ async def save_team_version(
         source_conversation_id=conversation_id,
         is_default=False,
         status="draft",
+        creation_source=safe_source,  # type: ignore[arg-type]
     )
     teams.setdefault(compiled_team.team_id, [])
     teams[compiled_team.team_id].append(version.model_dump(mode="json"))
@@ -1061,7 +1173,7 @@ def build_execution_snapshot(
     model = llm_settings.model or (
         llm_settings.ollama_model if llm_settings.provider == "ollama" else ""
     )
-    return ExecutionSnapshot(
+    snap = ExecutionSnapshot(
         mode=mode,  # type: ignore[arg-type]
         created_at=_now_iso(),
         ticker_or_universe=ticker_or_universe,
@@ -1076,3 +1188,6 @@ def build_execution_snapshot(
         strict_temporal_mode=data_boundary.mode == "backtest_strict",
         notes=notes or [],
     )
+    snap.team_classification = compiled_team.team_classification
+    snap.prompt_override_present = compiled_team.execution_profile.has_prompt_override
+    return snap

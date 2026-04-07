@@ -19,8 +19,17 @@ def parse_llm_json(raw: str, model_class: type[ModelT]) -> ModelT:
     text = re.sub(r"\s*```$", "", text)
     try:
         data = json.loads(text)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"LLM returned invalid JSON: {exc}. Raw: {text[:300]!r}") from exc
+    except json.JSONDecodeError as first_exc:
+        # Some providers (e.g. Anthropic) return prose with JSON embedded.
+        # Try to extract the outermost JSON object from the response.
+        match = re.search(r"\{[\s\S]*\}", text)
+        if match:
+            try:
+                data = json.loads(match.group())
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"LLM returned invalid JSON: {exc}. Raw: {text[:300]!r}") from exc
+        else:
+            raise ValueError(f"LLM returned invalid JSON: {first_exc}. Raw: {text[:300]!r}") from first_exc
     try:
         return model_class.model_validate(data)
     except Exception as exc:  # pragma: no cover - surfaced to callers

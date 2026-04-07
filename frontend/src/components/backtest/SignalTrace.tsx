@@ -30,10 +30,13 @@ export default function SignalTrace({ decisionEvents }: { decisionEvents: Decisi
                   {event.team_name} v{event.version_number} · {event.ticker}
                 </h4>
                 <p className="text-xs text-ink/55">
-                  Rebalance {event.rebalance_date} · Execute {event.execution_date} · {event.decision.action}
+                  Rebalance {event.rebalance_date} · Execute {event.execution_date} · {event.decision.action} · {event.current_weight_pct.toFixed(2)}% → {event.target_weight_pct.toFixed(2)}%
                 </p>
               </div>
               <ConfidenceBadge value={event.decision.confidence} />
+            </div>
+            <div className="mb-4 rounded-2xl bg-white/70 px-4 py-3 text-sm text-ink/70">
+              {event.selection_reason || event.exclusion_reason || "No construction note was stored for this ticker."}
             </div>
             <div className="space-y-4">
               {event.signals.map((signal) => (

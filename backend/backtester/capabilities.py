@@ -92,6 +92,15 @@ def build_historical_gap_report(
     profiles: dict[str, TeamHistoricalProfile] = {}
 
     for team in compiled_teams:
+        # Block experimental_custom teams in strict mode
+        team_classification = getattr(team, "team_classification", "premade")
+        if team_classification == "experimental_custom" and strict_temporal_mode:
+            blocking_errors.append(
+                f"{team.name}: experimental_custom teams cannot run in backtest_strict mode. "
+                "Remove prompt overrides or switch to backtest_experimental."
+            )
+            continue
+
         honored_agents: list[str] = []
         degraded_agents: list[HistoricalAgentSupport] = []
         ignored_agents: list[str] = []

@@ -49,7 +49,9 @@ export default function TradeLog({ runs }: { runs: TeamBacktestRun[] }) {
                     <th className="px-4 py-3">Notional</th>
                     <th className="px-4 py-3">Fill</th>
                     <th className="px-4 py-3">Cost</th>
+                    <th className="px-4 py-3">Prev</th>
                     <th className="px-4 py-3">Weight</th>
+                    <th className="px-4 py-3">Reason</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -61,7 +63,9 @@ export default function TradeLog({ runs }: { runs: TeamBacktestRun[] }) {
                       <td className="px-4 py-3">${Number(trade.notional_usd ?? 0).toFixed(2)}</td>
                       <td className="px-4 py-3">${Number(trade.fill_price ?? 0).toFixed(2)}</td>
                       <td className="px-4 py-3">${Number(trade.cost_usd ?? 0).toFixed(2)}</td>
+                      <td className="px-4 py-3">{Number(trade.previous_weight_pct ?? 0).toFixed(2)}%</td>
                       <td className="px-4 py-3">{Number(trade.weight_pct ?? 0).toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-ink/60">{String(trade.reason ?? "-")}</td>
                     </tr>
                   ))}
                 </tbody>

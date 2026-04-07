@@ -182,19 +182,14 @@ class BaseAnalysisAgent(ABC):
         if client.available:
             try:
                 raw = await client.chat(
-                    system=assemble_system_prompt(
-                        self.agent_name,
-                        self.build_system_prompt(),
-                        compiled_spec.variant_id,
-                        compiled_spec.modifiers,
-                    )
-                    + "\n"
-                    + ANTI_HALLUCINATION_SUFFIX,
+                    system=self._compose_system_prompt(compiled_spec),
                     messages=[
                         {
                             "role": "user",
                             "content": (
                                 f"Analyze {ticker} using ONLY the data context below. "
+                                f"Role label: {compiled_spec.modifiers.get('__role_label__', self.agent_name)}. "
+                                f"Role description: {compiled_spec.modifiers.get('__role_description__', self.agent_name)}. "
                                 f"Return JSON matching AgentSignal schema.\n\n"
                                 f"{self.build_data_context(data, compiled_spec, execution_snapshot)}"
                             ),
@@ -225,6 +220,51 @@ class BaseAnalysisAgent(ABC):
             max_age,
         )
         return signal
+
+    def _compose_system_prompt(self, compiled_spec: CompiledAgentSpec) -> str:
+        custom_prompt = str(compiled_spec.modifiers.get("__custom_system_prompt__", "")).strip()
+        role_label = str(compiled_spec.modifiers.get("__role_label__", self.agent_name)).strip() or self.agent_name
+        role_description = str(compiled_spec.modifiers.get("__role_description__", "")).strip()
+        if custom_prompt:
+            sections = [
+                f"Grounded Analysis Domain: {self.agent_name}",
+                f"Custom Role Label: {role_label}",
+            ]
+            if role_description:
+                sections.append(f"Role Description: {role_description}")
+            sections.extend(["", "Custom Role Instructions:", custom_prompt])
+            allowed_evidence = compiled_spec.modifiers.get("__allowed_evidence__", [])
+            if isinstance(allowed_evidence, list) and allowed_evidence:
+                sections.extend(["", "Allowed Evidence Bindings:"])
+                sections.extend(f"- {item}" for item in allowed_evidence)
+            forbidden_rules = compiled_spec.modifiers.get("__forbidden_inference_rules__", [])
+            if isinstance(forbidden_rules, list) and forbidden_rules:
+                sections.extend(["", "Forbidden Inference Rules:"])
+                sections.extend(f"- {item}" for item in forbidden_rules)
+            required_output_schema = str(compiled_spec.modifiers.get("__required_output_schema__", "")).strip()
+            if required_output_schema:
+                sections.extend(["", f"Required Output Schema: {required_output_schema}"])
+            operator_notes = str(compiled_spec.modifiers.get("__operator_notes__", "")).strip()
+            if operator_notes:
+                sections.extend(["", "Operator Notes:", operator_notes])
+            return "\n".join(sections) + "\n" + ANTI_HALLUCINATION_SUFFIX
+
+        base = assemble_system_prompt(
+            self.agent_name,
+            self.build_system_prompt(),
+            compiled_spec.variant_id,
+            compiled_spec.modifiers,
+        )
+        custom_sections: list[str] = []
+        allowed_evidence = compiled_spec.modifiers.get("__allowed_evidence__", [])
+        if isinstance(allowed_evidence, list) and allowed_evidence:
+            custom_sections.extend(["", "Allowed Evidence Bindings:"])
+            custom_sections.extend(f"- {item}" for item in allowed_evidence)
+        forbidden_rules = compiled_spec.modifiers.get("__forbidden_inference_rules__", [])
+        if isinstance(forbidden_rules, list) and forbidden_rules:
+            custom_sections.extend(["", "Additional Forbidden Inference Rules:"])
+            custom_sections.extend(f"- {item}" for item in forbidden_rules)
+        return base + ("\n" + "\n".join(custom_sections) if custom_sections else "") + "\n" + ANTI_HALLUCINATION_SUFFIX
     def _default_compiled_spec(self) -> CompiledAgentSpec:
         from backend.agents.registry import AGENT_DATA_DEPS
         from backend.llm.prompt_packs import PROMPT_PACKS_BY_AGENT

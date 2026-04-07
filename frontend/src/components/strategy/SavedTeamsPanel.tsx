@@ -1,4 +1,5 @@
 import type { TeamVersion } from "../../api/types";
+import TeamClassificationBadge from "../studio/TeamClassificationBadge";
 import Panel from "../common/Panel";
 
 export default function SavedTeamsPanel({
@@ -20,8 +21,11 @@ export default function SavedTeamsPanel({
             <div className="rounded-2xl bg-slate px-4 py-3" key={`${team.team_id}:${team.version_number}`}>
               <div className="mb-2 flex items-start justify-between gap-4">
                 <div>
-                  <div className="font-semibold">
-                    {team.compiled_team.name} v{team.version_number}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold">
+                      {team.compiled_team.name} v{team.version_number}
+                    </span>
+                    <TeamClassificationBadge classification={team.team_classification} />
                   </div>
                   <div className="text-sm text-ink/60">{team.compiled_team.description}</div>
                 </div>

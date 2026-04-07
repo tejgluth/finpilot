@@ -21,6 +21,8 @@ class ConfidenceScore(BaseModel):
 class AgentSignal(BaseModel):
     ticker: str
     agent_name: str
+    source_agent_name: str | None = None
+    graph_node_id: str | None = None
     action: str
     raw_confidence: float = Field(ge=0.0, le=1.0)
     final_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -78,6 +80,11 @@ class PortfolioDecision(BaseModel):
     ticker: str
     action: str
     confidence: float = Field(ge=0.0, le=1.0)
+    direction_score: float = Field(default=0.0, ge=-1.0, le=1.0)
+    conviction_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    priority_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    agreement_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    coverage_score: float = Field(default=0.0, ge=0.0, le=1.0)
     reasoning: str
     cited_agents: list[str]
     bull_points_used: list[str]

@@ -9,6 +9,7 @@ import uvicorn
 from backend.api.middleware import register_middleware
 from backend.api.routes import agents, audit, backtest, permissions, portfolio, setup, strategy, trading
 from backend.api.routes import settings as settings_routes
+from backend.api.routes import custom_team as custom_team_routes
 from backend.config import settings
 from backend.database import init_db
 from backend.security.audit_logger import AuditLogger
@@ -48,6 +49,7 @@ app.include_router(trading.router, prefix="/api/trading")
 app.include_router(audit.router, prefix="/api/audit")
 app.include_router(permissions.router, prefix="/api/permissions")
 app.include_router(settings_routes.router, prefix="/api/settings")
+app.include_router(custom_team_routes.router, prefix="/api/strategy/custom")
 
 
 @app.get("/api/health")

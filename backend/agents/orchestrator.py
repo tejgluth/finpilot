@@ -15,6 +15,7 @@ from backend.agents.debate.bear_researcher import build_bear_case
 from backend.agents.debate.bull_researcher import build_bull_case
 from backend.agents.decision.portfolio_manager import decide_portfolio_action
 from backend.agents.decision.risk_manager import evaluate_risk
+from backend.agents.graph_runtime import run_graph_pipeline
 from backend.llm.budget import BudgetTracker
 from backend.models.agent_team import ExecutionSnapshot
 from backend.models.signal import AgentSignal, DebateOutput, PortfolioDecision
@@ -43,6 +44,13 @@ async def run_agent_pipeline(
         max_tokens=runtime_settings.llm.max_tokens_per_request,
     )
     team = execution_snapshot.effective_team
+    if team.team_classification in {"validated_custom", "experimental_custom"} and team.topology is not None:
+        return await run_graph_pipeline(
+            ticker=ticker,
+            runtime_settings=runtime_settings,
+            execution_snapshot=execution_snapshot,
+            budget=budget,
+        )
     enabled = {
         "fundamentals": runtime_settings.agents.enable_fundamentals,
         "technicals": runtime_settings.agents.enable_technicals,
@@ -80,6 +88,7 @@ async def run_agent_pipeline(
         proposed_position_pct=risk.proposed_position_pct,
         agent_weights=team.agent_weights,
         risk_notes=risk.notes if risk.allowed else f"Trade blocked: {risk.notes}",
+        max_data_age_minutes=runtime_settings.data_sources.max_data_age_minutes,
     )
     if not risk.allowed:
         decision.action = "HOLD"

@@ -1,9 +1,17 @@
 import type {
   AgentMetadata,
   AlpacaPlanResponse,
+  ArchitectureDraft,
+  ArchitectureConversationTurn,
+  ArchitectureIntent,
+  ArchitecturePatch,
   AuditEntry,
+  CapabilityGap,
   BacktestResult,
   CompiledTeam,
+  ConversationRequirement,
+  CustomConversation,
+  NodeModeEligibility,
   PermissionsPayload,
   PortfolioPayload,
   PremadeTeamCatalog,
@@ -17,6 +25,8 @@ import type {
   StrategyPreferences,
   TeamComparison,
   TeamRecommendation,
+  TeamTopology,
+  TeamValidationResult,
   TeamVersion,
   TradeOrderResponse,
   TradingStatusPayload,
@@ -266,4 +276,126 @@ export const api = {
       body: JSON.stringify({ active, reason }),
     }),
   getAudit: (limit = 100) => request<{ entries: AuditEntry[] }>(`/api/audit/?limit=${limit}`),
+
+  // ── Custom Team ───────────────────────────────────────────────────────────
+  customTeam: {
+    listConversations: () =>
+      request<{ conversations: CustomConversation[] }>("/api/strategy/custom/conversations"),
+
+    startConversation: (seedPrompt?: string) =>
+      request<CustomConversation>("/api/strategy/custom/conversations", {
+        method: "POST",
+        body: JSON.stringify({ seed_prompt: seedPrompt ?? null }),
+      }),
+
+    getConversation: (conversationId: string) =>
+      request<CustomConversation>(`/api/strategy/custom/conversations/${conversationId}`),
+
+    sendMessage: (conversationId: string, content: string, requestCompile = false) =>
+      request<{
+        conversation: CustomConversation;
+        draft: ArchitectureDraft;
+        compiled_team: CompiledTeam | null;
+        needs_follow_up: boolean;
+        assistant_message: string;
+        resolved_requirements: ConversationRequirement[];
+        open_questions: ConversationRequirement[];
+        graph_change_summary: string[];
+        capability_gaps: CapabilityGap[];
+        mode_compatibility: NodeModeEligibility;
+        validation_state: ArchitectureConversationTurn["validation_state"];
+      }>(`/api/strategy/custom/conversations/${conversationId}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ content, request_compile: requestCompile }),
+      }),
+
+    compileConversation: (conversationId: string) =>
+      request<{
+        conversation: CustomConversation;
+        draft: ArchitectureDraft;
+        compiled_team: CompiledTeam;
+        validation_result: TeamValidationResult;
+        assistant_message: string;
+        resolved_requirements: ConversationRequirement[];
+        open_questions: ConversationRequirement[];
+        graph_change_summary: string[];
+        capability_gaps: CapabilityGap[];
+        mode_compatibility: NodeModeEligibility;
+        validation_state: ArchitectureConversationTurn["validation_state"];
+      }>(`/api/strategy/custom/conversations/${conversationId}/compile`, {
+        method: "POST",
+      }),
+
+    validateTopology: (topology: TeamTopology, intent?: Partial<ArchitectureIntent>) =>
+      request<TeamValidationResult>("/api/strategy/custom/validate-topology", {
+        method: "POST",
+        body: JSON.stringify({ topology, intent: intent ?? null }),
+      }),
+
+    compileTopology: (
+      topology: TeamTopology,
+      intent?: Partial<ArchitectureIntent>,
+      proposedName?: string,
+      proposedDescription?: string,
+    ) =>
+      request<{ compiled_team: CompiledTeam; validation_result: TeamValidationResult }>(
+        "/api/strategy/custom/compile-topology",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            topology,
+            intent: intent ?? null,
+            proposed_name: proposedName ?? "Custom Team",
+            proposed_description: proposedDescription ?? "",
+          }),
+        },
+      ),
+
+    generatePatch: (
+      sourceTeamId: string,
+      instruction: string,
+      versionNumber?: number,
+      compiledTeam?: CompiledTeam,
+    ) =>
+      request<ArchitecturePatch>("/api/strategy/custom/patch/generate", {
+        method: "POST",
+        body: JSON.stringify({
+          source_team_id: sourceTeamId,
+          source_version_number: versionNumber ?? null,
+          instruction,
+          compiled_team: compiledTeam ?? null,
+        }),
+      }),
+
+    applyPatch: (
+      patch: ArchitecturePatch,
+      sourceTeamId: string,
+      label: string,
+      versionNumber?: number,
+      compiledTeam?: CompiledTeam,
+    ) =>
+      request<{ compiled_team: CompiledTeam; validation_result: TeamValidationResult }>(
+        "/api/strategy/custom/patch/apply",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            source_team_id: sourceTeamId,
+            source_version_number: versionNumber ?? null,
+            patch,
+            label,
+            compiled_team: compiledTeam ?? null,
+          }),
+        },
+      ),
+
+    saveTeam: (payload: {
+      conversation_id?: string | null;
+      compiled_team: CompiledTeam;
+      label: string;
+    }) =>
+      request<{ team_version: TeamVersion }>("/api/strategy/custom/teams", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+  },
 };

@@ -79,7 +79,7 @@ uv run python scripts/validate_env.py
 echo -e "${GREEN}Starting FinPilot at http://localhost:${FRONTEND_PORT}${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop.${NC}"
 
-uv run python -m backend.main &
+uv run python scripts/run_dev.py &
 BACKEND_PID=$!
 
 pnpm --dir frontend dev --host --port "${FRONTEND_PORT}" &

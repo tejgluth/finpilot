@@ -407,7 +407,7 @@ async def test_reuse_cache_avoids_recomputing_candidate_pipeline(monkeypatch, tm
     await BacktestEngine().run(request, user_settings, execution_snapshots=[snapshot])
     await BacktestEngine().run(request, user_settings, execution_snapshots=[snapshot])
 
-    assert call_count["count"] == 2
+    assert call_count["count"] == 1
 
     cache_key = build_pipeline_cache_key(
         execution_snapshot=build_execution_snapshot(
