@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}"
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -59,8 +62,13 @@ fi
 mkdir -p data/cache data/artifacts
 
 if [ ! -f .env ]; then
-  cp .env.example .env
-  echo -e "${YELLOW}Created a local .env file from .env.example.${NC}"
+  if [ -f .env.example ]; then
+    cp .env.example .env
+    echo -e "${YELLOW}Created a local .env file from .env.example.${NC}"
+  else
+    touch .env
+    echo -e "${YELLOW}.env.example was missing, so FinPilot created a blank local .env file instead.${NC}"
+  fi
   echo -e "${YELLOW}FinPilot will open the local onboarding flow so you can add keys in the browser.${NC}"
 fi
 
