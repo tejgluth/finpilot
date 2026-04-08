@@ -70,3 +70,52 @@ async def test_ollama_chat_falls_back_to_generate_on_404(monkeypatch):
         budget=BudgetTracker(max_cost_usd=1.0, max_tokens=1000),
     )
     assert content == '{"ok": true}'
+
+
+@pytest.mark.asyncio
+async def test_ollama_chat_falls_back_to_openai_compat_when_api_endpoints_missing(monkeypatch):
+    settings = LlmSettings(provider="ollama", model="gemma4", ollama_base_url="http://localhost:11434")
+    client = get_llm_client(settings)
+
+    class MockResponse:
+        def __init__(self, status_code: int, payload: dict):
+            self.status_code = status_code
+            self._payload = payload
+            self.text = ""
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise RuntimeError(f"status {self.status_code}")
+
+        def json(self):
+            return self._payload
+
+    class MockAsyncClient:
+        def __init__(self, *args, **kwargs):
+            self.calls = []
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def post(self, url, json):
+            self.calls.append((url, json))
+            if url.endswith("/api/chat"):
+                return MockResponse(404, {"error": "not found"})
+            if url.endswith("/api/generate"):
+                return MockResponse(404, {"error": "not found"})
+            if url.endswith("/v1/chat/completions"):
+                return MockResponse(200, {"choices": [{"message": {"content": '{"ok": true}'}}]})
+            raise AssertionError(f"unexpected url {url}")
+
+    monkeypatch.setattr("backend.llm.provider.httpx.AsyncClient", MockAsyncClient)
+    content = await client.chat(
+        system="Return JSON.",
+        messages=[{"role": "user", "content": "hello"}],
+        max_tokens=200,
+        temperature=0.2,
+        budget=BudgetTracker(max_cost_usd=1.0, max_tokens=1000),
+    )
+    assert content == '{"ok": true}'

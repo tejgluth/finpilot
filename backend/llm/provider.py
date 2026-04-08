@@ -171,6 +171,38 @@ class LLMClient:
         temperature: float,
     ) -> str:
         base_url = (self.llm_settings.ollama_base_url if self.llm_settings else "") or env_settings.ollama_base_url
+        base_url = base_url.strip()
+
+        # Support common user-provided variants like:
+        # - http://localhost:11434        (default)
+        # - http://localhost:11434/api    (API root)
+        # - http://localhost:11434/v1     (OpenAI-compat root)
+        base = base_url.rstrip("/")
+        root_base = base
+        openai_base = base
+        if base.endswith("/api"):
+            root_base = base[: -len("/api")]
+            openai_base = root_base
+        elif base.endswith("/v1"):
+            root_base = base[: -len("/v1")]
+            openai_base = base
+
+        chat_url = f"{root_base.rstrip('/')}/api/chat"
+        generate_url = f"{root_base.rstrip('/')}/api/generate"
+        openai_chat_url = (
+            f"{openai_base.rstrip('/')}/chat/completions"
+            if openai_base.endswith("/v1")
+            else f"{openai_base.rstrip('/')}/v1/chat/completions"
+        )
+
+        prompt_parts = [system.strip(), ""]
+        for item in messages:
+            role = item.get("role", "user").upper()
+            content = item.get("content", "").strip()
+            prompt_parts.append(f"{role}:\n{content}")
+            prompt_parts.append("")
+        prompt = "\n".join(prompt_parts).strip()
+
         chat_payload = {
             "model": self.model,
             "messages": [{"role": "system", "content": system}, *messages],
@@ -178,28 +210,86 @@ class LLMClient:
             "stream": False,
             "options": {"temperature": temperature, "num_predict": max_tokens},
         }
+
+        chat_payload_compat = dict(chat_payload)
+        chat_payload_compat.pop("format", None)
+
+        generate_payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "format": "json",
+            "stream": False,
+            "options": {"temperature": temperature, "num_predict": max_tokens},
+        }
+        generate_payload_compat = dict(generate_payload)
+        generate_payload_compat.pop("format", None)
+
+        openai_payload = {
+            "model": self.model,
+            "messages": [{"role": "system", "content": system}, *messages],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": False,
+            # Ollama supports OpenAI-compatible endpoints, but response_format support can vary.
+            "response_format": {"type": "json_object"},
+        }
+        openai_payload_compat = dict(openai_payload)
+        openai_payload_compat.pop("response_format", None)
+
         async with httpx.AsyncClient(timeout=90.0) as client:
-            response = await client.post(f"{base_url.rstrip('/')}/api/chat", json=chat_payload)
-            if response.status_code == 404:
-                prompt_parts = [system.strip(), ""]
-                for item in messages:
-                    role = item.get("role", "user").upper()
-                    content = item.get("content", "").strip()
-                    prompt_parts.append(f"{role}:\n{content}")
-                    prompt_parts.append("")
-                generate_payload = {
-                    "model": self.model,
-                    "prompt": "\n".join(prompt_parts).strip(),
-                    "format": "json",
-                    "stream": False,
-                    "options": {"temperature": temperature, "num_predict": max_tokens},
-                }
-                response = await client.post(f"{base_url.rstrip('/')}/api/generate", json=generate_payload)
-            response.raise_for_status()
+            # 1) Prefer /api/chat (best structured behavior).
+            response = await client.post(chat_url, json=chat_payload)
+
+            # If /api/chat exists but doesn't support format=json yet, retry without format.
+            if response.status_code == 400:
+                response = await client.post(chat_url, json=chat_payload_compat)
+
+            # 2) Older Ollama versions don't have /api/chat (404). Some proxies respond 405.
+            if response.status_code in {404, 405}:
+                response = await client.post(generate_url, json=generate_payload)
+                if response.status_code == 400:
+                    response = await client.post(generate_url, json=generate_payload_compat)
+
+            # 3) Last resort: OpenAI-compatible endpoint.
+            if response.status_code in {404, 405}:
+                response = await client.post(openai_chat_url, json=openai_payload)
+                if response.status_code == 400:
+                    response = await client.post(openai_chat_url, json=openai_payload_compat)
+
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                status_code = exc.response.status_code
+                body = ""
+                try:
+                    payload = exc.response.json()
+                    body = str(payload.get("error") or payload.get("message") or payload)[:300]
+                except Exception:
+                    body = (exc.response.text or "")[:300]
+
+                hint = ""
+                if status_code == 404 and ("model" in body.lower() and "not" in body.lower()):
+                    hint = f" Model '{self.model}' is likely not installed. Try: `ollama pull {self.model}`."
+                elif status_code in {404, 405}:
+                    hint = (
+                        " This Ollama instance may be very old or not actually Ollama. "
+                        f"Checked endpoints: {chat_url}, {generate_url}, {openai_chat_url}."
+                    )
+
+                raise RuntimeError(
+                    f"Ollama request failed ({status_code}) at {exc.request.url}. {body}{hint}".strip()
+                ) from exc
         data = response.json()
         if "message" in data:
             message = data.get("message", {})
             content = message.get("content", "")
+        elif "choices" in data:
+            choices = data.get("choices", [])
+            if not choices:
+                raise RuntimeError("Ollama OpenAI-compatible endpoint returned no choices")
+            choice0 = choices[0]
+            message = choice0.get("message", {}) if isinstance(choice0, dict) else {}
+            content = message.get("content", "") if isinstance(message, dict) else ""
         else:
             content = data.get("response", "")
         # Some Ollama models wrap JSON in code fences. Preserve raw text and let validators strip them.
