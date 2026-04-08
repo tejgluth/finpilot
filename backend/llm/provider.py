@@ -28,19 +28,10 @@ def _default_model(provider_name: str, llm_settings: "LlmSettings | None") -> st
     return "unknown-model"
 
 
-@lru_cache(maxsize=8)
-def _ollama_available(base_url: str) -> bool:
-    try:
-        response = httpx.get(f"{base_url.rstrip('/')}/api/tags", timeout=0.4)
-        return response.is_success
-    except Exception:
-        return False
-
-
 @lru_cache(maxsize=32)
-def _ollama_model_available(base_url: str, model: str) -> bool:
+def _ollama_model_available(base_url: str, model: str) -> bool | None:
     try:
-        response = httpx.get(f"{base_url.rstrip('/')}/api/tags", timeout=0.6)
+        response = httpx.get(f"{base_url.rstrip('/')}/api/tags", timeout=2.5)
         response.raise_for_status()
         payload = response.json()
         tags = payload.get("models", [])
@@ -56,7 +47,10 @@ def _ollama_model_available(base_url: str, model: str) -> bool:
                 return True
         return False
     except Exception:
-        return False
+        # Local-first Ollama setups can be slow to answer metadata probes even when
+        # actual chat requests work. Treat probe failures as "unknown" and let the
+        # real chat call determine success.
+        return None
 
 
 @dataclass
@@ -206,7 +200,11 @@ def get_llm_client(llm_settings: "LlmSettings | None" = None) -> LLMClient:
     elif provider_name == "ollama":
         base_url = (llm_settings.ollama_base_url if llm_settings else "") or env_settings.ollama_base_url
         model = _default_model(provider_name, llm_settings)
-        available = _ollama_available(base_url) and _ollama_model_available(base_url, model)
+        if not base_url.strip() or not model.strip():
+            available = False
+        else:
+            model_available = _ollama_model_available(base_url, model)
+            available = model_available is not False
     else:
         available = False
     return LLMClient(

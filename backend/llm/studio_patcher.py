@@ -70,13 +70,27 @@ async def generate_patch_from_nl(
     sanitized = sanitize(instruction, ContentSource.USER_STRATEGY_INPUT)
     safe_instruction = sanitized.sanitized_text
 
-    client = get_llm_client(user_settings.llm)
-
-    if not client.available or compiled_team.topology is None:
+    if compiled_team.topology is None:
         return ArchitecturePatch(
             source_team_id=compiled_team.team_id,
             source_version_number=compiled_team.version_number,
-            patch_description=f"LLM not available. Instruction received: {safe_instruction[:200]}",
+            patch_description=(
+                "This team is missing its editable topology, so AI Refine cannot modify it yet. "
+                "Recompile the team in Studio and try again."
+            ),
+            requires_recompile=False,
+            created_at=_now_iso(),
+        )
+
+    client = get_llm_client(user_settings.llm)
+    if not client.available and client.provider_name != "ollama":
+        return ArchitecturePatch(
+            source_team_id=compiled_team.team_id,
+            source_version_number=compiled_team.version_number,
+            patch_description=(
+                f"LLM provider '{client.provider_name}' is not configured for AI Refine. "
+                "Update Settings -> LLM or switch to Ollama, then try again."
+            ),
             requires_recompile=False,
             created_at=_now_iso(),
         )

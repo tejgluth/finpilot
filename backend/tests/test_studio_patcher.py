@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from backend.llm.studio_patcher import apply_patch
+import pytest
+
+from backend.llm.studio_patcher import apply_patch, generate_patch_from_nl
 from backend.llm.topology_compiler import compile_topology_to_flat_team, validate_topology
 from backend.models.agent_team import ArchitectureDraft, ArchitecturePatch, TeamEdge, TeamNode, TeamTopology
 from backend.settings.user_settings import default_user_settings
@@ -118,3 +120,17 @@ def test_apply_patch_can_add_analysis_node_with_custom_prompt_contract():
     assert new_node.prompt_contract is not None
     assert new_node.prompt_contract.system_prompt_text.startswith("Model only the spillover")
     assert len(new_node.capability_bindings) > 0
+
+
+@pytest.mark.asyncio
+async def test_generate_patch_explains_when_topology_missing():
+    compiled = _make_base_compiled_team()
+    compiled.topology = None
+
+    patch = await generate_patch_from_nl(
+        compiled,
+        "Increase the weight of fundamentals.",
+        default_user_settings(),
+    )
+
+    assert "missing its editable topology" in patch.patch_description
