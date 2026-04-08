@@ -19,8 +19,8 @@ node_modules/
 dist/
 coverage/
 htmlcov/
-secrets/
-data/
+/secrets/
+/data/
 frontend/node_modules/
 frontend/dist/
 pnpm-lock.yaml
@@ -43,7 +43,7 @@ __pycache__/
 *.db
 *.log
 *.key
-secrets/
-data/
+/secrets/
+/data/
 frontend/.vite/
 frontend/dist/

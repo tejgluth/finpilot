@@ -4,6 +4,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
+REQUIRED_PATHS=(
+  "backend/main.py"
+  "backend/data/__init__.py"
+  "backend/data/adapters/__init__.py"
+  "frontend/package.json"
+  "scripts/run_dev.py"
+)
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -45,6 +53,15 @@ case "${OS}" in
   *) MACHINE=WSL ;;
 esac
 echo -e "${BLUE}Detected: ${MACHINE}${NC}"
+
+for required_path in "${REQUIRED_PATHS[@]}"; do
+  if [ ! -e "${required_path}" ]; then
+    echo -e "${RED}FinPilot setup cannot continue because this checkout is incomplete.${NC}"
+    echo -e "${RED}Missing required path: ${required_path}${NC}"
+    echo -e "${YELLOW}Re-clone the repo or restore the missing files, then run ./setup.sh again.${NC}"
+    exit 1
+  fi
+done
 
 if ! command -v uv &> /dev/null; then
   echo -e "${YELLOW}Installing uv...${NC}"
