@@ -1,0 +1,58 @@
+- generic [ref=e3]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: FinPilot
+      - generic [ref=e8]: Local-first investing lab
+    - navigation [ref=e9]:
+      - link "Setup" [ref=e10] [cursor=pointer]:
+        - /url: /
+      - link "Strategy" [ref=e11] [cursor=pointer]:
+        - /url: /strategy
+      - link "Backtest" [ref=e12] [cursor=pointer]:
+        - /url: /backtest
+      - link "Portfolio" [ref=e13] [cursor=pointer]:
+        - /url: /portfolio
+      - link "Trading" [ref=e14] [cursor=pointer]:
+        - /url: /trading
+      - link "Audit" [ref=e15] [cursor=pointer]:
+        - /url: /audit
+      - link "Settings" [ref=e16] [cursor=pointer]:
+        - /url: /settings
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: Workspace
+        - heading "Truth-first controls, local-only analytics" [level=1] [ref=e21]
+      - generic [ref=e23]: Paper default
+    - generic [ref=e25]:
+      - tablist "Strategy views" [ref=e26]:
+        - tab "Build" [selected] [ref=e27] [cursor=pointer]
+        - tab "Visualize" [ref=e28] [cursor=pointer]
+        - tab "Compare" [ref=e29] [cursor=pointer]
+        - tab "Custom Team" [ref=e30] [cursor=pointer]
+      - tabpanel "Build" [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - generic [ref=e36]:
+                - generic [ref=e37]: Strategy
+                - heading "Conversational team builder" [level=3] [ref=e38]
+              - button "Compile" [ref=e39] [cursor=pointer]
+            - generic [ref=e40]:
+              - paragraph [ref=e43]: Start with a concrete request such as “Build a short-term semiconductor breakout team with sentiment secondary and avoid financials.”
+              - generic [ref=e44]:
+                - textbox "Describe the team you want, what to emphasize, what to avoid, and any investor styles to imitate." [ref=e45]
+                - generic [ref=e46]:
+                  - generic [ref=e47]: Multi-turn state is persisted locally. The builder only uses the trusted executable catalog.
+                  - button "Thinking…" [disabled] [ref=e48]
+          - generic [ref=e49]:
+            - generic [ref=e50]:
+              - generic [ref=e52]:
+                - generic [ref=e53]: Comparison
+                - heading "Default comparison" [level=3] [ref=e54]
+              - paragraph [ref=e55]: Compile a draft to see how it differs from the premade default team.
+            - generic [ref=e56]:
+              - generic [ref=e58]:
+                - generic [ref=e59]: Library
+                - heading "Saved teams" [level=3] [ref=e60]
+              - paragraph [ref=e62]: No saved teams yet. Build and save a team to see it here.

@@ -35,6 +35,8 @@ from backend.settings.user_settings import UserSettings
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
+_ALLOWED_EDGE_TYPES: frozenset[str] = frozenset({"signal", "veto", "gate", "synthesis", "reasoning"})
+
 
 def _default_prompt_contract(
     *,
@@ -165,7 +167,18 @@ def _sanitize_generated_patch(
 
     terminal_node_ids = {node.node_id for node in compiled_team.topology.nodes if _is_terminal_node(node)}
     sanitized_node_changes: list[dict] = []
-    sanitized_edge_changes = list(patch.edge_changes)
+    sanitized_edge_changes: list[dict] = []
+
+    # Normalize edge changes first (the model sometimes uses edge_type="input" or uses "type" key).
+    for change in patch.edge_changes:
+        if not isinstance(change, dict):
+            continue
+        normalized = dict(change)
+        if "edge_type" not in normalized and "type" in normalized:
+            normalized["edge_type"] = normalized.get("type")
+        raw_edge_type = str(normalized.get("edge_type", "signal")).strip().lower()
+        normalized["edge_type"] = raw_edge_type if raw_edge_type in _ALLOWED_EDGE_TYPES else "signal"
+        sanitized_edge_changes.append(normalized)
 
     for change in patch.node_changes:
         action = str(change.get("action", "update")).lower()
@@ -178,12 +191,14 @@ def _sanitize_generated_patch(
             src = fields.get("source_node_id") or change.get("source_node_id")
             tgt = fields.get("target_node_id") or change.get("target_node_id")
             if src and tgt:
+                raw_edge_type = str(fields.get("edge_type", change.get("edge_type", "signal"))).strip().lower()
+                edge_type = raw_edge_type if raw_edge_type in _ALLOWED_EDGE_TYPES else "signal"
                 sanitized_edge_changes.append(
                     {
                         "action": "remove" if action == "remove" else "add",
                         "source_node_id": src,
                         "target_node_id": tgt,
-                        "edge_type": fields.get("edge_type", change.get("edge_type", "signal")),
+                        "edge_type": edge_type,
                     }
                 )
             continue
@@ -618,10 +633,12 @@ def apply_patch(
             ]
         elif action == "add" and src and tgt:
             if src in nodes_by_id and tgt in nodes_by_id:
+                raw_edge_type = str(change.get("edge_type", "signal")).strip().lower()
+                edge_type = raw_edge_type if raw_edge_type in _ALLOWED_EDGE_TYPES else "signal"
                 new_edge = TeamEdge(
                     source_node_id=src,
                     target_node_id=tgt,
-                    edge_type=change.get("edge_type", "signal"),
+                    edge_type=edge_type,
                 )
                 topology.edges.append(new_edge)
 

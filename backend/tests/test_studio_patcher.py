@@ -194,6 +194,14 @@ def test_sanitize_generated_patch_drops_edge_like_nodes_and_keeps_terminal():
                 "node_id": terminal.node_id,
             },
         ],
+        edge_changes=[
+            {
+                "action": "add",
+                "source_node_id": compiled.topology.nodes[0].node_id,
+                "target_node_id": terminal.node_id,
+                "edge_type": "input",
+            }
+        ],
     )
 
     sanitized = _sanitize_generated_patch(compiled, patch)
@@ -201,6 +209,7 @@ def test_sanitize_generated_patch_drops_edge_like_nodes_and_keeps_terminal():
     assert all(not change["node_id"].startswith("edge-") for change in sanitized.node_changes)
     assert all(change.get("node_id") != terminal.node_id or change.get("action") != "remove" for change in sanitized.node_changes)
     assert any(edge["target_node_id"] == terminal.node_id for edge in sanitized.edge_changes)
+    assert all(edge.get("edge_type") in {"signal", "veto", "gate", "synthesis", "reasoning"} for edge in sanitized.edge_changes)
 
 
 @pytest.mark.asyncio

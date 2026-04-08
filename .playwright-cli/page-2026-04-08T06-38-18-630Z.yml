@@ -1,0 +1,222 @@
+- generic [ref=e3]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: FinPilot
+      - generic [ref=e8]: Local-first investing lab
+    - navigation [ref=e9]:
+      - link "Setup" [ref=e10] [cursor=pointer]:
+        - /url: /
+      - link "Strategy" [ref=e11] [cursor=pointer]:
+        - /url: /strategy
+      - link "Backtest" [ref=e12] [cursor=pointer]:
+        - /url: /backtest
+      - link "Portfolio" [ref=e13] [cursor=pointer]:
+        - /url: /portfolio
+      - link "Trading" [ref=e14] [cursor=pointer]:
+        - /url: /trading
+      - link "Audit" [ref=e15] [cursor=pointer]:
+        - /url: /audit
+      - link "Settings" [ref=e16] [cursor=pointer]:
+        - /url: /settings
+  - main [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: Workspace
+        - heading "Truth-first controls, local-only analytics" [level=1] [ref=e21]
+      - generic [ref=e23]: Paper default
+    - generic [ref=e25]:
+      - tablist "Strategy views" [ref=e26]:
+        - tab "Build" [ref=e27] [cursor=pointer]
+        - tab "Visualize" [ref=e28] [cursor=pointer]
+        - tab "Compare" [ref=e29] [cursor=pointer]
+        - tab "Custom Team" [active] [selected] [ref=e30] [cursor=pointer]
+      - tabpanel "Custom Team" [ref=e301]:
+        - generic [ref=e302]:
+          - generic [ref=e303]:
+            - generic [ref=e304]:
+              - generic [ref=e305]:
+                - button "Aggressive Momentum Team ✏" [ref=e306] [cursor=pointer]:
+                  - heading "Aggressive Momentum Team" [level=2] [ref=e307]
+                  - generic [ref=e308]: ✏
+                - generic [ref=e309]: Experimental
+              - generic [ref=e310]:
+                - generic [ref=e311]:
+                  - button "View" [ref=e312] [cursor=pointer]
+                  - button "Edit" [ref=e313] [cursor=pointer]
+                  - button "Expert" [ref=e314] [cursor=pointer]
+                - button "AI Refine" [ref=e315] [cursor=pointer]
+            - generic [ref=e317]:
+              - paragraph [ref=e318]: Warnings
+              - list [ref=e319]:
+                - listitem [ref=e320]:
+                  - generic [ref=e321]: ⚠
+                  - generic [ref=e322]: Node 'node-fundamentals-bbb5e3' depends on Earnings Execution History, which is not fully configured.
+                - listitem [ref=e323]:
+                  - generic [ref=e324]: ⚠
+                  - generic [ref=e325]: Node 'node-growth-01e8c2' depends on Surprise History, which is not fully configured.
+            - generic [ref=e326]:
+              - application "Custom team topology editor" [ref=e329]:
+                - generic [ref=e331]:
+                  - generic:
+                    - generic:
+                      - img:
+                        - img "Edge from node-momentum-e994bc to node-synthesis-160135" [ref=e332] [cursor=pointer]
+                      - img:
+                        - img "Edge from node-technicals-d8f5c5 to node-synthesis-160135" [ref=e334] [cursor=pointer]
+                      - img:
+                        - img "Edge from node-fundamentals-bbb5e3 to node-synthesis-160135" [ref=e336] [cursor=pointer]
+                      - img:
+                        - img "Edge from node-growth-01e8c2 to node-synthesis-160135" [ref=e338] [cursor=pointer]
+                      - img:
+                        - img "Edge from node-value-2c559c to node-synthesis-160135" [ref=e340] [cursor=pointer]
+                      - img:
+                        - img "Edge from node-synthesis-160135 to node-output-6112bb"
+                    - generic:
+                      - group [ref=e342] [cursor=pointer]:
+                        - generic [ref=e346]:
+                          - generic [ref=e348]:
+                            - paragraph [ref=e349]: Momentum Analyst
+                            - paragraph [ref=e350]: Data
+                          - paragraph [ref=e351]: Fetches and interprets momentum data to produce an evidence-backed signal.
+                          - generic [ref=e353]:
+                            - generic [ref=e354]: Influence
+                            - generic [ref=e355]: 97%
+                      - group [ref=e358] [cursor=pointer]:
+                        - generic [ref=e362]:
+                          - generic [ref=e364]:
+                            - paragraph [ref=e365]: Technicals Analyst
+                            - paragraph [ref=e366]: Data
+                          - paragraph [ref=e367]: Fetches and interprets technicals data to produce an evidence-backed signal.
+                          - generic [ref=e369]:
+                            - generic [ref=e370]: Influence
+                            - generic [ref=e371]: 92%
+                      - group [ref=e374] [cursor=pointer]:
+                        - generic [ref=e378]:
+                          - generic [ref=e380]:
+                            - paragraph [ref=e381]: Fundamentals Analyst
+                            - paragraph [ref=e382]: Data
+                          - paragraph [ref=e383]: Fetches and interprets fundamentals data to produce an evidence-backed signal.
+                          - generic [ref=e385]:
+                            - generic [ref=e386]: Influence
+                            - generic [ref=e387]: 75%
+                      - group [ref=e390] [cursor=pointer]:
+                        - generic [ref=e394]:
+                          - generic [ref=e396]:
+                            - paragraph [ref=e397]: Growth Analyst
+                            - paragraph [ref=e398]: Data
+                          - paragraph [ref=e399]: Fetches and interprets growth data to produce an evidence-backed signal.
+                          - generic [ref=e401]:
+                            - generic [ref=e402]: Influence
+                            - generic [ref=e403]: 75%
+                      - group [ref=e406] [cursor=pointer]:
+                        - generic [ref=e410]:
+                          - generic [ref=e412]:
+                            - paragraph [ref=e413]: Value Analyst
+                            - paragraph [ref=e414]: Data
+                          - paragraph [ref=e415]: Fetches and interprets value data to produce an evidence-backed signal.
+                          - generic [ref=e417]:
+                            - generic [ref=e418]: Influence
+                            - generic [ref=e419]: 60%
+                      - group [ref=e422] [cursor=pointer]:
+                        - generic [ref=e426]:
+                          - generic [ref=e428]:
+                            - paragraph [ref=e429]: Signal Aggregator
+                            - paragraph [ref=e430]: Reasoning
+                          - paragraph [ref=e431]: Aggregates upstream signals into a unified directional view.
+                      - group [ref=e432] [cursor=pointer]:
+                        - generic [ref=e436]:
+                          - generic [ref=e438]:
+                            - paragraph [ref=e439]: Portfolio Decision
+                            - paragraph [ref=e440]: Output
+                          - paragraph [ref=e441]: Aggregates all upstream evidence into the final BUY/SELL/HOLD decision.
+                - img
+                - generic "Graph controls" [ref=e442]:
+                  - button "Zoom In" [ref=e443] [cursor=pointer]:
+                    - img [ref=e444]
+                  - button "Zoom Out" [disabled]:
+                    - img
+                  - button "Fit View" [ref=e446] [cursor=pointer]:
+                    - img [ref=e447]
+                - link "React Flow attribution" [ref=e450] [cursor=pointer]:
+                  - /url: https://reactflow.dev
+                  - text: React Flow
+              - generic [ref=e453]:
+                - generic [ref=e454]:
+                  - paragraph [ref=e455]: Execution Eligibility
+                  - generic [ref=e456]:
+                    - generic [ref=e457]:
+                      - generic [ref=e458]:
+                        - paragraph [ref=e459]: Backtest (Strict)
+                        - paragraph [ref=e460]: Historical simulation with strict temporal integrity
+                      - generic [ref=e461]: Blocked
+                    - generic [ref=e462]:
+                      - generic [ref=e463]:
+                        - paragraph [ref=e464]: Backtest (Experimental)
+                        - paragraph [ref=e465]: Relaxed temporal rules — results may not reflect real performance
+                      - generic [ref=e466]: Eligible
+                    - generic [ref=e467]:
+                      - generic [ref=e468]:
+                        - paragraph [ref=e469]: Paper Trading
+                        - paragraph [ref=e470]: Simulated real-time trading without capital at risk
+                      - generic [ref=e471]: Eligible
+                    - generic [ref=e472]:
+                      - generic [ref=e473]:
+                        - paragraph [ref=e474]: Live Trading
+                        - paragraph [ref=e475]: Real capital — review all warnings before enabling
+                      - generic [ref=e476]: Eligible
+                  - paragraph [ref=e478]: • Custom reasoning nodes with system prompts disable strict backtest (temporal faithfulness cannot be guaranteed for custom prompts).
+                  - generic [ref=e479]:
+                    - paragraph [ref=e480]: ⚠ Node 'node-fundamentals-bbb5e3' depends on Earnings Execution History, which is not fully configured.
+                    - paragraph [ref=e481]: ⚠ Node 'node-growth-01e8c2' depends on Surprise History, which is not fully configured.
+                - paragraph [ref=e482]: Click a node to inspect it. Switch to Edit mode to make changes.
+          - generic [ref=e483]:
+            - generic [ref=e484]:
+              - generic [ref=e485]:
+                - paragraph [ref=e486]: Aggressive Momentum Team
+                - paragraph [ref=e487]: Short-horizon custom team with 5 analysis agents.
+              - generic [ref=e488]: Experimental
+            - generic [ref=e489]:
+              - button "Start over" [ref=e490] [cursor=pointer]
+              - button "Save team" [ref=e491] [cursor=pointer]
+          - generic [ref=e492]:
+            - generic [ref=e493]:
+              - paragraph [ref=e494]: Resolved
+              - generic [ref=e495]:
+                - generic [ref=e496]:
+                  - paragraph [ref=e497]: Risk Level
+                  - paragraph [ref=e498]: aggressive
+                - generic [ref=e499]:
+                  - paragraph [ref=e500]: Time Horizon
+                  - paragraph [ref=e501]: short
+                - generic [ref=e502]:
+                  - paragraph [ref=e503]: Primary Evidence Lanes
+                  - paragraph [ref=e504]: momentum
+            - generic [ref=e505]:
+              - paragraph [ref=e506]: Graph Changes
+              - paragraph [ref=e508]: Created an initial graph with 5 data ingestion nodes.
+            - generic [ref=e509]:
+              - paragraph [ref=e510]: Mode Support
+              - generic [ref=e511]:
+                - generic [ref=e512]: Analyze
+                - generic [ref=e513]: Paper
+                - generic [ref=e514]: Live
+                - generic [ref=e515]: Strict BT
+                - generic [ref=e516]: Exp BT
+              - generic [ref=e517]:
+                - paragraph [ref=e518]: • Custom reasoning nodes with system prompts disable strict backtest (temporal faithfulness cannot be guaranteed for custom prompts).
+                - paragraph [ref=e519]: • Node 'node-fundamentals-bbb5e3' depends on Earnings Execution History, which is not fully configured.
+                - paragraph [ref=e520]: • Node 'node-growth-01e8c2' depends on Surprise History, which is not fully configured.
+          - generic [ref=e521]:
+            - paragraph [ref=e522]: Capability Gaps
+            - generic [ref=e523]:
+              - generic [ref=e524]:
+                - paragraph [ref=e525]: Earnings Execution History
+                - paragraph [ref=e526]: Earnings Execution History is not fully configured. The architect can still design a degraded role with current data, or the user can enable one of the listed sources for fuller coverage.
+                - paragraph [ref=e527]: Use the current data mix now, or enable one of the missing sources in Settings.
+              - generic [ref=e528]:
+                - paragraph [ref=e529]: Surprise History
+                - paragraph [ref=e530]: Surprise History is not fully configured. The architect can still design a degraded role with current data, or the user can enable one of the listed sources for fuller coverage.
+                - paragraph [ref=e531]: Use the current data mix now, or enable one of the missing sources in Settings.
+          - generic [ref=e532]:
+            - paragraph [ref=e533]: "Error: Internal Server Error"
+            - button "Dismiss" [ref=e534] [cursor=pointer]
