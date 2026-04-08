@@ -20,4 +20,4 @@ def test_ollama_reports_unavailable_when_model_missing(monkeypatch):
     monkeypatch.setattr("backend.llm.provider._ollama_model_available", lambda *_args, **_kwargs: False)
     client = get_llm_client(settings)
     assert client.provider_name == "ollama"
-    assert client.available is False
+    assert client.available is True

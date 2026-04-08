@@ -200,11 +200,9 @@ def get_llm_client(llm_settings: "LlmSettings | None" = None) -> LLMClient:
     elif provider_name == "ollama":
         base_url = (llm_settings.ollama_base_url if llm_settings else "") or env_settings.ollama_base_url
         model = _default_model(provider_name, llm_settings)
-        if not base_url.strip() or not model.strip():
-            available = False
-        else:
-            model_available = _ollama_model_available(base_url, model)
-            available = model_available is not False
+        # For local Ollama, a configured base URL + model is enough to attempt a call.
+        # Preflight metadata checks are helpful for diagnostics but too brittle to gate usage.
+        available = bool(base_url.strip() and model.strip())
     else:
         available = False
     return LLMClient(
