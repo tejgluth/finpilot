@@ -4,7 +4,12 @@ from uuid import uuid4
 
 import pytest
 
-from backend.llm.studio_patcher import apply_patch, generate_patch_from_nl
+from backend.llm.studio_patcher import (
+    _heuristic_patch_from_instruction,
+    _sanitize_generated_patch,
+    apply_patch,
+    generate_patch_from_nl,
+)
 from backend.llm.topology_compiler import compile_topology_to_flat_team, validate_topology
 from backend.models.agent_team import ArchitectureDraft, ArchitecturePatch, TeamEdge, TeamNode, TeamTopology
 from backend.settings.user_settings import default_user_settings
@@ -134,3 +139,107 @@ async def test_generate_patch_explains_when_topology_missing():
     )
 
     assert "missing its editable topology" in patch.patch_description
+
+
+def test_heuristic_patch_handles_raise_and_reduce_separately():
+    compiled = _make_base_compiled_team()
+    technicals = TeamNode(
+        node_id=f"node-technicals-{uuid4().hex[:6]}",
+        display_name="Technicals",
+        node_family="analysis",
+        agent_type="technicals",
+        influence_weight=55,
+        enabled=True,
+    )
+    sentiment = TeamNode(
+        node_id=f"node-sentiment-{uuid4().hex[:6]}",
+        display_name="Sentiment",
+        node_family="analysis",
+        agent_type="sentiment",
+        influence_weight=40,
+        enabled=True,
+    )
+    compiled.topology.nodes.extend([technicals, sentiment])
+
+    patch = _heuristic_patch_from_instruction(
+        compiled,
+        "Increase technicals weight and reduce sentiment",
+    )
+
+    assert patch is not None
+    changes = {change["node_id"]: change["fields"]["influence_weight"] for change in patch.node_changes}
+    assert changes[technicals.node_id] == 70
+    assert changes[sentiment.node_id] == 25
+
+
+def test_sanitize_generated_patch_drops_edge_like_nodes_and_keeps_terminal():
+    compiled = _make_base_compiled_team()
+    terminal = next(node for node in compiled.topology.nodes if node.node_family == "decision")
+
+    patch = ArchitecturePatch(
+        source_team_id=compiled.team_id,
+        source_version_number=compiled.version_number,
+        node_changes=[
+            {
+                "action": "add",
+                "node_id": "edge-synthesis-fundamentals-connection-0",
+                "fields": {
+                    "source_node_id": compiled.topology.nodes[0].node_id,
+                    "target_node_id": terminal.node_id,
+                    "edge_type": "signal",
+                },
+            },
+            {
+                "action": "remove",
+                "node_id": terminal.node_id,
+            },
+        ],
+    )
+
+    sanitized = _sanitize_generated_patch(compiled, patch)
+
+    assert all(not change["node_id"].startswith("edge-") for change in sanitized.node_changes)
+    assert all(change.get("node_id") != terminal.node_id or change.get("action") != "remove" for change in sanitized.node_changes)
+    assert any(edge["target_node_id"] == terminal.node_id for edge in sanitized.edge_changes)
+
+
+@pytest.mark.asyncio
+async def test_generate_patch_recovers_from_truncated_llm_json(monkeypatch):
+    compiled = _make_base_compiled_team()
+    technicals = TeamNode(
+        node_id=f"node-technicals-{uuid4().hex[:6]}",
+        display_name="Technicals",
+        node_family="analysis",
+        agent_type="technicals",
+        influence_weight=55,
+        enabled=True,
+    )
+    compiled.topology.nodes.append(technicals)
+    settings = default_user_settings()
+    settings.llm.provider = "ollama"
+    settings.llm.model = "gemma4"
+
+    class MockClient:
+        provider_name = "ollama"
+        available = True
+
+        async def chat(self, **kwargs):
+            return """
+            {
+              "patch_description": "Raise technicals weight.",
+              "node_changes": [
+                {
+                  "action": "update",
+                  "node_id": "%s",
+                  "fields": {
+                    "influence_weight": 80
+                  }
+                }
+            """ % technicals.node_id
+
+    monkeypatch.setattr("backend.llm.studio_patcher.get_llm_client", lambda *_args, **_kwargs: MockClient())
+
+    patch = await generate_patch_from_nl(compiled, "Increase technicals to 80", settings)
+
+    assert "technicals" in patch.patch_description.lower()
+    assert patch.node_changes[0]["node_id"] == technicals.node_id

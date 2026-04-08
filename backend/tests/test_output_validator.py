@@ -1,4 +1,5 @@
 import pytest
+from pydantic import BaseModel
 
 from backend.models.signal import AgentSignal
 from backend.security.output_validator import parse_llm_json
@@ -28,3 +29,29 @@ def test_parse_llm_json_validates_agent_signal():
 def test_parse_llm_json_rejects_invalid_json():
     with pytest.raises(ValueError):
         parse_llm_json("{not-json}", AgentSignal)
+
+
+class _PartialPatchSchema(BaseModel):
+    patch_description: str = ""
+    node_changes: list[dict] = []
+    edge_changes: list[dict] = []
+    behavior_changes: list[dict] = []
+    requires_recompile: bool = True
+
+
+def test_parse_llm_json_can_recover_partial_json_when_allowed():
+    raw = """
+    {
+      "patch_description": "Raise technicals weight.",
+      "node_changes": [
+        {
+          "action": "update",
+          "node_id": "node-technicals-123",
+          "fields": {
+            "influence_weight": 80
+          }
+        }
+    """
+    parsed = parse_llm_json(raw, _PartialPatchSchema, allow_partial=True)
+    assert parsed.patch_description == "Raise technicals weight."
+    assert parsed.node_changes[0]["node_id"] == "node-technicals-123"

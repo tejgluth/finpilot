@@ -10,6 +10,7 @@ import asyncio
 import json
 from copy import deepcopy
 from datetime import UTC, datetime
+import re
 
 from backend.llm.capability_catalog import bindings_for_agent
 from backend.llm.provider import get_llm_client
@@ -56,6 +57,160 @@ def _default_prompt_contract(
     )
 
 
+_AGENT_ALIASES: dict[str, tuple[str, ...]] = {
+    "fundamentals": ("fundamentals", "fundamental"),
+    "technicals": ("technicals", "technical", "technicals agent", "technicals agent"),
+    "sentiment": ("sentiment", "news", "reddit"),
+    "macro": ("macro", "macroeconomic"),
+    "value": ("value",),
+    "momentum": ("momentum",),
+    "growth": ("growth",),
+}
+
+
+def _is_terminal_node(node: TeamNode) -> bool:
+    return bool(node.parameters.get("is_terminal")) or node.node_family == "decision"
+
+
+def _find_agent_node_ids(compiled_team: CompiledTeam) -> dict[str, str]:
+    if compiled_team.topology is None:
+        return {}
+    result: dict[str, str] = {}
+    for node in compiled_team.topology.nodes:
+        domain = (node.data_domain or node.agent_type or "").strip().lower()
+        if domain in VALID_ANALYSIS_AGENTS and domain not in result:
+            result[domain] = node.node_id
+    return result
+
+
+def _extract_requested_weight(fragment: str) -> int | None:
+    explicit = re.search(r"\b(?:to|at)\s+(\d{1,3})\b", fragment)
+    if explicit:
+        return max(0, min(100, int(explicit.group(1))))
+    return None
+
+
+def _heuristic_patch_from_instruction(
+    compiled_team: CompiledTeam,
+    instruction: str,
+) -> ArchitecturePatch | None:
+    if compiled_team.topology is None:
+        return None
+
+    normalized = re.sub(r"[^a-z0-9\s%-]+", " ", instruction.lower())
+    node_ids = _find_agent_node_ids(compiled_team)
+    current_nodes = {node.node_id: node for node in compiled_team.topology.nodes}
+    node_changes: list[dict] = []
+    summaries: list[str] = []
+    clauses = [fragment.strip() for fragment in re.split(r"\b(?:and|then)\b|,", normalized) if fragment.strip()]
+
+    for clause in clauses:
+        for agent_name, aliases in _AGENT_ALIASES.items():
+            if not any(re.search(rf"\b{re.escape(alias)}\b", clause) for alias in aliases):
+                continue
+            node_id = node_ids.get(agent_name)
+            if not node_id:
+                continue
+            node = current_nodes[node_id]
+            target_weight = _extract_requested_weight(clause)
+
+            if re.search(r"\b(disable|turn off|deactivate|mute)\b", clause):
+                node_changes.append({"action": "update", "node_id": node_id, "fields": {"enabled": False}})
+                summaries.append(f"Disabled {agent_name}.")
+                continue
+
+            if re.search(r"\b(enable|turn on|reactivate)\b", clause):
+                node_changes.append({"action": "update", "node_id": node_id, "fields": {"enabled": True}})
+                summaries.append(f"Enabled {agent_name}.")
+                continue
+
+            if re.search(r"\b(increase|raise|boost|upweight|more)\b", clause):
+                next_weight = target_weight if target_weight is not None else min(100, node.influence_weight + 15)
+                node_changes.append({"action": "update", "node_id": node_id, "fields": {"influence_weight": next_weight}})
+                summaries.append(f"Raised {agent_name} weight to {next_weight}.")
+                continue
+
+            if re.search(r"\b(decrease|reduce|lower|downweight|less)\b", clause):
+                next_weight = target_weight if target_weight is not None else max(0, node.influence_weight - 15)
+                node_changes.append({"action": "update", "node_id": node_id, "fields": {"influence_weight": next_weight}})
+                summaries.append(f"Lowered {agent_name} weight to {next_weight}.")
+                continue
+
+    rename_match = re.search(r"\brename team to\s+([a-z0-9 _-]{3,80})\b", normalized)
+    behavior_changes: list[dict] = []
+    if rename_match:
+        summaries.append(f"Rename request noted for '{rename_match.group(1).strip()}'.")
+
+    if not node_changes and not behavior_changes:
+        return None
+
+    return ArchitecturePatch(
+        source_team_id=compiled_team.team_id,
+        source_version_number=compiled_team.version_number,
+        patch_description=" ".join(summaries),
+        node_changes=node_changes,
+        behavior_changes=behavior_changes,
+        requires_recompile=True,
+        user_confirmed=False,
+        created_at=_now_iso(),
+    )
+
+
+def _sanitize_generated_patch(
+    compiled_team: CompiledTeam,
+    patch: ArchitecturePatch,
+) -> ArchitecturePatch:
+    if compiled_team.topology is None:
+        return patch
+
+    terminal_node_ids = {node.node_id for node in compiled_team.topology.nodes if _is_terminal_node(node)}
+    sanitized_node_changes: list[dict] = []
+    sanitized_edge_changes = list(patch.edge_changes)
+
+    for change in patch.node_changes:
+        action = str(change.get("action", "update")).lower()
+        node_id = str(change.get("node_id", "")).strip()
+        fields = change.get("fields") if isinstance(change.get("fields"), dict) else None
+        if not fields:
+            fields = {k: v for k, v in change.items() if k not in {"action", "node_id"}}
+
+        if node_id.startswith("edge-") or {"source_node_id", "target_node_id"} & set(fields):
+            src = fields.get("source_node_id") or change.get("source_node_id")
+            tgt = fields.get("target_node_id") or change.get("target_node_id")
+            if src and tgt:
+                sanitized_edge_changes.append(
+                    {
+                        "action": "remove" if action == "remove" else "add",
+                        "source_node_id": src,
+                        "target_node_id": tgt,
+                        "edge_type": fields.get("edge_type", change.get("edge_type", "signal")),
+                    }
+                )
+            continue
+
+        if action == "remove" and node_id in terminal_node_ids:
+            continue
+
+        if action == "update" and node_id in terminal_node_ids and isinstance(fields, dict):
+            fields = dict(fields)
+            if fields.get("node_family") and fields.get("node_family") != "decision":
+                fields.pop("node_family", None)
+            if "parameters" in fields and isinstance(fields["parameters"], dict):
+                fields["parameters"] = {**fields["parameters"], "is_terminal": True}
+            elif "parameters" not in fields:
+                fields["parameters"] = {"is_terminal": True}
+            change = {"action": action, "node_id": node_id, "fields": fields}
+
+        sanitized_node_changes.append(change)
+
+    return patch.model_copy(
+        update={
+            "node_changes": sanitized_node_changes,
+            "edge_changes": sanitized_edge_changes,
+        }
+    )
+
+
 async def generate_patch_from_nl(
     compiled_team: CompiledTeam,
     instruction: str,
@@ -69,6 +224,10 @@ async def generate_patch_from_nl(
     """
     sanitized = sanitize(instruction, ContentSource.USER_STRATEGY_INPUT)
     safe_instruction = sanitized.sanitized_text
+
+    heuristic_patch = _heuristic_patch_from_instruction(compiled_team, safe_instruction)
+    if heuristic_patch is not None:
+        return heuristic_patch
 
     if compiled_team.topology is None:
         return ArchitecturePatch(
@@ -177,17 +336,20 @@ async def generate_patch_from_nl(
                 temperature=user_settings.llm.temperature_strategy,
                 budget=budget,
             )
-        parsed = parse_llm_json(raw, _PatchResponseSchema)
-        patch = ArchitecturePatch(
-            source_team_id=compiled_team.team_id,
-            source_version_number=compiled_team.version_number,
-            patch_description=parsed.patch_description,
-            node_changes=parsed.node_changes,
-            edge_changes=parsed.edge_changes,
-            behavior_changes=parsed.behavior_changes,
-            requires_recompile=parsed.requires_recompile,
-            user_confirmed=False,
-            created_at=_now_iso(),
+        parsed = parse_llm_json(raw, _PatchResponseSchema, allow_partial=True)
+        patch = _sanitize_generated_patch(
+            compiled_team,
+            ArchitecturePatch(
+                source_team_id=compiled_team.team_id,
+                source_version_number=compiled_team.version_number,
+                patch_description=parsed.patch_description,
+                node_changes=parsed.node_changes,
+                edge_changes=parsed.edge_changes,
+                behavior_changes=parsed.behavior_changes,
+                requires_recompile=parsed.requires_recompile,
+                user_confirmed=False,
+                created_at=_now_iso(),
+            ),
         )
         preview_draft = apply_patch(compiled_team, patch, user_settings)
         preview_validation = validate_topology(preview_draft.topology)
@@ -213,22 +375,33 @@ async def generate_patch_from_nl(
                 temperature=user_settings.llm.temperature_strategy,
                 budget=budget,
             )
-        repaired = parse_llm_json(repair_raw, _PatchResponseSchema)
-        repaired_patch = ArchitecturePatch(
-            source_team_id=compiled_team.team_id,
-            source_version_number=compiled_team.version_number,
-            patch_description=repaired.patch_description,
-            node_changes=repaired.node_changes,
-            edge_changes=repaired.edge_changes,
-            behavior_changes=repaired.behavior_changes,
-            requires_recompile=repaired.requires_recompile,
-            user_confirmed=False,
-            created_at=_now_iso(),
+        repaired = parse_llm_json(repair_raw, _PatchResponseSchema, allow_partial=True)
+        repaired_patch = _sanitize_generated_patch(
+            compiled_team,
+            ArchitecturePatch(
+                source_team_id=compiled_team.team_id,
+                source_version_number=compiled_team.version_number,
+                patch_description=repaired.patch_description,
+                node_changes=repaired.node_changes,
+                edge_changes=repaired.edge_changes,
+                behavior_changes=repaired.behavior_changes,
+                requires_recompile=repaired.requires_recompile,
+                user_confirmed=False,
+                created_at=_now_iso(),
+            ),
         )
         repaired_draft = apply_patch(compiled_team, repaired_patch, user_settings)
         repaired_validation = validate_topology(repaired_draft.topology)
         if repaired_validation.valid:
             return repaired_patch
+
+        heuristic_repair = _heuristic_patch_from_instruction(compiled_team, safe_instruction)
+        if heuristic_repair is not None:
+            heuristic_preview = apply_patch(compiled_team, heuristic_repair, user_settings)
+            heuristic_validation = validate_topology(heuristic_preview.topology)
+            if heuristic_validation.valid:
+                return heuristic_repair
+
         return ArchitecturePatch(
             source_team_id=compiled_team.team_id,
             source_version_number=compiled_team.version_number,

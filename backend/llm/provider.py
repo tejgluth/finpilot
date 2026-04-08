@@ -171,7 +171,7 @@ class LLMClient:
         temperature: float,
     ) -> str:
         base_url = (self.llm_settings.ollama_base_url if self.llm_settings else "") or env_settings.ollama_base_url
-        payload = {
+        chat_payload = {
             "model": self.model,
             "messages": [{"role": "system", "content": system}, *messages],
             "format": "json",
@@ -179,11 +179,29 @@ class LLMClient:
             "options": {"temperature": temperature, "num_predict": max_tokens},
         }
         async with httpx.AsyncClient(timeout=90.0) as client:
-            response = await client.post(f"{base_url.rstrip('/')}/api/chat", json=payload)
+            response = await client.post(f"{base_url.rstrip('/')}/api/chat", json=chat_payload)
+            if response.status_code == 404:
+                prompt_parts = [system.strip(), ""]
+                for item in messages:
+                    role = item.get("role", "user").upper()
+                    content = item.get("content", "").strip()
+                    prompt_parts.append(f"{role}:\n{content}")
+                    prompt_parts.append("")
+                generate_payload = {
+                    "model": self.model,
+                    "prompt": "\n".join(prompt_parts).strip(),
+                    "format": "json",
+                    "stream": False,
+                    "options": {"temperature": temperature, "num_predict": max_tokens},
+                }
+                response = await client.post(f"{base_url.rstrip('/')}/api/generate", json=generate_payload)
             response.raise_for_status()
         data = response.json()
-        message = data.get("message", {})
-        content = message.get("content", "")
+        if "message" in data:
+            message = data.get("message", {})
+            content = message.get("content", "")
+        else:
+            content = data.get("response", "")
         # Some Ollama models wrap JSON in code fences. Preserve raw text and let validators strip them.
         return content
 
