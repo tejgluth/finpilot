@@ -26,6 +26,7 @@ pnpm-lock.yaml
 uv.lock
 .DS_Store
 .env
+!.env.example
 .venv/
 node_modules/
 dist/
