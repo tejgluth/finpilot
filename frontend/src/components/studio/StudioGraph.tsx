@@ -26,6 +26,7 @@ interface Props {
   connectingFrom: string | null;
   onNodeSelect: (nodeId: string | null) => void;
   onConnect: (sourceNodeId: string, targetNodeId: string) => void;
+  onEdgeDelete?: (edgeId: string) => void;
   onNodePositionChange?: (nodeId: string, x: number, y: number) => void;
 }
 
@@ -54,7 +55,11 @@ function toRfNodes(
   }));
 }
 
-function toRfEdges(model: VisualizationModel): Edge[] {
+function toRfEdges(
+  model: VisualizationModel,
+  isEditable: boolean,
+  onEdgeDelete?: (edgeId: string) => void,
+): Edge[] {
   return model.edges.map((vizEdge) => ({
     id: vizEdge.id,
     source: vizEdge.source,
@@ -64,6 +69,8 @@ function toRfEdges(model: VisualizationModel): Edge[] {
       strokeWidth: vizEdge.strokeWidth,
       style: vizEdge.style,
       diffHighlight: vizEdge.diffHighlight,
+      isEditable,
+      onDelete: onEdgeDelete,
     },
     focusable: false,
   }));
@@ -75,14 +82,16 @@ function ModelSyncer({
   selectedNodeId,
   connectingFrom,
   onNodeSelect,
-}: Pick<Props, "model" | "studioMode" | "selectedNodeId" | "connectingFrom" | "onNodeSelect">) {
+  onEdgeDelete,
+}: Pick<Props, "model" | "studioMode" | "selectedNodeId" | "connectingFrom" | "onNodeSelect" | "onEdgeDelete">) {
   const { setNodes, setEdges, fitView } = useReactFlow();
+  const isEditable = studioMode === "edit" || studioMode === "expert";
 
   useEffect(() => {
     setNodes(toRfNodes(model, studioMode, selectedNodeId, connectingFrom, onNodeSelect));
-    setEdges(toRfEdges(model));
+    setEdges(toRfEdges(model, isEditable, onEdgeDelete));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model, studioMode, selectedNodeId, connectingFrom, setNodes, setEdges]);
+  }, [model, studioMode, selectedNodeId, connectingFrom, setNodes, setEdges, onEdgeDelete]);
 
   // Only fit view on initial load (when model changes structurally, not just selection)
   useEffect(() => {
@@ -100,6 +109,7 @@ export default function StudioGraph({
   connectingFrom,
   onNodeSelect,
   onConnect,
+  onEdgeDelete,
   onNodePositionChange,
 }: Props) {
   const isEditable = studioMode === "edit" || studioMode === "expert";
@@ -144,7 +154,7 @@ export default function StudioGraph({
       <ReactFlow
         aria-label="Custom team topology editor"
         colorMode="light"
-        defaultEdges={toRfEdges(model)}
+        defaultEdges={toRfEdges(model, isEditable, onEdgeDelete)}
         defaultNodes={toRfNodes(model, studioMode, selectedNodeId, connectingFrom, onNodeSelect)}
         deleteKeyCode={null}
         edgeTypes={EDGE_TYPES}
@@ -171,6 +181,7 @@ export default function StudioGraph({
         <ModelSyncer
           connectingFrom={connectingFrom}
           model={model}
+          onEdgeDelete={onEdgeDelete}
           onNodeSelect={onNodeSelect}
           selectedNodeId={selectedNodeId}
           studioMode={studioMode}

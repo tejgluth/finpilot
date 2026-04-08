@@ -35,6 +35,7 @@ export default function TeamStudio() {
     addNode,
     removeNode,
     addEdge,
+    removeEdge,
     updateNodeWeight,
     updateNodeVariant,
     updateNodeEnabled,
@@ -227,6 +228,7 @@ export default function TeamStudio() {
             connectingFrom={connectingFrom}
             model={model}
             onConnect={handleConnect}
+            onEdgeDelete={isEditable ? removeEdge : undefined}
             onNodePositionChange={updateNodePosition}
             onNodeSelect={handleNodeSelect}
             selectedNodeId={selectedNodeId}
