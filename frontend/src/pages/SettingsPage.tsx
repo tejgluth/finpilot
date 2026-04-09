@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ThinkingDots from "../components/common/ThinkingDots";
 import { useSettings } from "../hooks/useSettings";
 import AgentSettingsPanel from "../components/settings/AgentSettings";
 import BacktestSettingsPanel from "../components/settings/BacktestSettings";
@@ -17,7 +18,7 @@ export default function SettingsPage() {
   }
 
   if (!settings) {
-    return <div className="rounded-[28px] bg-white/80 p-6 shadow-soft">Loading settings…</div>;
+    return <div className="rounded-[28px] bg-white/80 p-6 shadow-soft flex items-center gap-2">Loading settings <ThinkingDots /></div>;
   }
 
   return (

@@ -56,7 +56,7 @@ async def analyze_ticker(payload: AnalyzeRequest):
 
     effective_settings = apply_team_overrides(runtime_settings, compiled_team)
     data_boundary = DataBoundary(
-        mode="paper" if payload.mode == "paper" else "live" if payload.mode == "live" else "live",
+        mode="paper" if payload.mode == "paper" else "live" if payload.mode == "live" else "paper",
         as_of_datetime=payload.as_of_datetime,
         allow_latest_semantics=payload.as_of_datetime is None,
     )

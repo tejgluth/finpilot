@@ -27,6 +27,8 @@ class DataSourceSettings:
     use_yfinance: bool = True
     use_fred: bool = True
     use_edgar: bool = True
+    use_sec_companyfacts: bool = True
+    use_gdelt: bool = True
     use_coingecko: bool = True
     use_finnhub: bool = False
     use_marketaux: bool = False

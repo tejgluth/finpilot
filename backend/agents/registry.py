@@ -9,21 +9,21 @@ from backend.models.agent_team import (
 
 AGENT_DESCRIPTIONS: dict[str, str] = {
     "fundamentals": (
-        "Analyzes company financial health using yfinance, SEC EDGAR, and FMP with grounded, "
+        "Analyzes company financial health using SEC CompanyFacts, SEC EDGAR, yfinance, and FMP with grounded, "
         "field-cited reasoning."
     ),
     "technicals": (
         "Interprets pre-computed technical indicators calculated from yfinance OHLCV data."
     ),
     "sentiment": (
-        "Synthesizes sanitized news, Reddit mention trends, and options fear gauges from approved "
+        "Synthesizes sanitized headline archives, Reddit mention trends, and options fear gauges from approved "
         "sentiment sources only."
     ),
     "macro": (
         "Evaluates rates, inflation, labor, and market regime proxies using FRED and yfinance."
     ),
     "value": (
-        "Applies a value investing lens to fetched valuation ratios and sanitized filing context."
+        "Applies a value investing lens to fetched valuation ratios, SEC CompanyFacts history, and sanitized filing context."
     ),
     "momentum": (
         "Measures price leadership, trend persistence, and relative strength versus SPY."
@@ -41,13 +41,13 @@ AGENT_DESCRIPTIONS: dict[str, str] = {
 }
 
 AGENT_DATA_DEPS: dict[str, list[str]] = {
-    "fundamentals": ["yfinance", "edgar", "fmp"],
+    "fundamentals": ["sec_companyfacts", "edgar", "yfinance", "fmp"],
     "technicals": ["yfinance"],
-    "sentiment": ["finnhub", "marketaux", "reddit", "yfinance"],
+    "sentiment": ["finnhub", "marketaux", "gdelt", "reddit", "yfinance"],
     "macro": ["fred", "yfinance"],
-    "value": ["yfinance", "edgar"],
+    "value": ["sec_companyfacts", "edgar", "yfinance"],
     "momentum": ["yfinance"],
-    "growth": ["yfinance", "fmp"],
+    "growth": ["sec_companyfacts", "yfinance", "fmp"],
     "risk_manager": [],
     "portfolio_manager": [],
 }
@@ -80,4 +80,3 @@ REGISTERED_AGENT_NAMES: set[str] = set(VALID_TEAM_AGENTS)
 SECTOR_NAMES: list[str] = sorted(VALID_SECTORS)
 EXECUTABLE_ANALYSIS_AGENTS: set[str] = set(VALID_ANALYSIS_AGENTS)
 REQUIRED_AGENTS: set[str] = set(REQUIRED_DECISION_AGENTS)
-

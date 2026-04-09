@@ -3,6 +3,7 @@ import AgentPerformance from "../components/portfolio/AgentPerformance";
 import PnLChart from "../components/portfolio/PnLChart";
 import PortfolioDashboard from "../components/portfolio/PortfolioDashboard";
 import { usePortfolioStore } from "../stores/portfolioStore";
+import ThinkingDots from "../components/common/ThinkingDots";
 
 export default function PortfolioPage() {
   const { portfolio, fetchPortfolio } = usePortfolioStore();
@@ -12,7 +13,7 @@ export default function PortfolioPage() {
   }, [fetchPortfolio]);
 
   if (!portfolio) {
-    return <div className="rounded-[28px] bg-white/80 p-6 shadow-soft">Loading portfolio…</div>;
+    return <div className="rounded-[28px] bg-white/80 p-6 shadow-soft flex items-center gap-2">Loading portfolio <ThinkingDots /></div>;
   }
 
   return (

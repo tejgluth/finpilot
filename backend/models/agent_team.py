@@ -61,7 +61,7 @@ class PromptOverride(BaseModel):
     override_id: str = Field(default_factory=lambda: uuid4().hex)
     node_id: str
     label: str = ""
-    system_prompt_text: str
+    system_prompt_text: str = Field(max_length=16384)
     created_at: str
     warning: str = (
         "Prompt overrides disable strict backtest eligibility and mark the team as experimental_custom."
@@ -81,7 +81,7 @@ class CapabilityBinding(BaseModel):
 
 
 class NodePromptContract(BaseModel):
-    system_prompt_text: str = ""
+    system_prompt_text: str = Field(default="", max_length=16384)
     allowed_evidence: list[str] = []
     forbidden_inference_rules: list[str] = []
     required_output_schema: str = "AgentSignal"
@@ -139,7 +139,7 @@ class CompiledReasoningSpec(BaseModel):
     node_id: str
     node_name: str
     node_kind: str = ""
-    system_prompt: str
+    system_prompt: str = Field(max_length=16384)
     parameters: dict[str, Any] = {}
     input_node_ids: list[str] = []
     output_schema: str = "ReasoningOutput"
@@ -192,7 +192,7 @@ class TeamNode(BaseModel):
     # For data-ingestion nodes: specialization prompt (anti-hallucination suffix always appended).
     # For custom reasoning nodes: the entire node behavior is defined here.
     # Takes precedence over prompt_contract.system_prompt_text when set.
-    system_prompt: str = ""
+    system_prompt: str = Field(default="", max_length=16384)
 
     # parameters: per-node runtime parameters authored by the LLM or user.
     # Recognized keys: temperature (float), max_tokens (int), output_schema (str),
@@ -669,11 +669,16 @@ class CompiledTeam(BaseModel):
 
     @model_validator(mode="after")
     def validate_specs(self) -> "CompiledTeam":
+        from backend.agents.registry import AGENT_DATA_DEPS
+
         # Custom teams (validated_custom or experimental_custom) may have topology-only nodes
         # (reasoning nodes, output nodes) with no CompiledAgentSpec — those go in compiled_reasoning_specs.
         if self.team_classification in ("validated_custom", "experimental_custom"):
             # Sync weights from compiled_agent_specs — no strict validation of unknown keys.
             for spec_key, spec in self.compiled_agent_specs.items():
+                default_sources = AGENT_DATA_DEPS.get(spec.agent_name) or AGENT_DATA_DEPS.get(spec_key, [])
+                if default_sources:
+                    spec.owned_sources = list(dict.fromkeys([*spec.owned_sources, *default_sources]))
                 label_key = spec_key if spec_key in self.agent_weights else spec.agent_name
                 if spec.weight != self.agent_weights.get(label_key, spec.weight):
                     self.agent_weights[label_key] = spec.weight
@@ -688,6 +693,9 @@ class CompiledTeam(BaseModel):
             for agent_name, spec in self.compiled_agent_specs.items():
                 if agent_name not in self.enabled_agents:
                     raise ValueError(f"compiled_agent_spec present for disabled agent: {agent_name}")
+                default_sources = AGENT_DATA_DEPS.get(spec.agent_name) or AGENT_DATA_DEPS.get(agent_name, [])
+                if default_sources:
+                    spec.owned_sources = list(dict.fromkeys([*spec.owned_sources, *default_sources]))
                 if spec.weight != self.agent_weights.get(agent_name, spec.weight):
                     self.agent_weights[agent_name] = spec.weight
         return self

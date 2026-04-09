@@ -1,6 +1,7 @@
 import { useDeferredValue, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { useCustomTeamStore } from "../../stores/customTeamStore";
+import ThinkingDots from "../common/ThinkingDots";
 
 const SEED_SUGGESTIONS = [
   "Technical-focused short-term team with momentum secondary",
@@ -120,7 +121,7 @@ export default function CustomTeamConversation() {
                 disabled={loading}
                 type="submit"
               >
-                {loading ? "Starting…" : "Start building"}
+                {loading ? <ThinkingDots className="text-white" /> : "Start building"}
               </button>
             </div>
           </form>
@@ -137,7 +138,7 @@ export default function CustomTeamConversation() {
           <div className="space-y-3">
             {messages.length === 0 && (
               <p className="text-sm text-ink/40 text-center py-4">
-                Starting conversation…
+                Starting conversation <ThinkingDots className="text-ink/40" />
               </p>
             )}
             {messages.map((msg) => (
@@ -156,6 +157,11 @@ export default function CustomTeamConversation() {
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
               </div>
             ))}
+            {loading && (
+              <div className="max-w-[88%] rounded-[20px] bg-slate/80 px-4 py-3 text-ink shadow-soft">
+                <ThinkingDots />
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -192,7 +198,7 @@ export default function CustomTeamConversation() {
               disabled={loading || !input.trim()}
               type="submit"
             >
-              {loading ? "…" : "Send"}
+              {loading ? <ThinkingDots className="text-white" /> : "Send"}
             </button>
           </form>
         </div>
@@ -215,7 +221,7 @@ export default function CustomTeamConversation() {
             onClick={() => void compileDraft()}
             type="button"
           >
-            {loading ? "Compiling…" : "Compile team →"}
+            {loading ? <ThinkingDots className="text-white" /> : "Compile team →"}
           </button>
         </div>
       )}

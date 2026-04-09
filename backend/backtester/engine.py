@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
+from io import StringIO
 from typing import Any, Awaitable, Callable
 
 import pandas as pd
@@ -278,6 +280,16 @@ class BacktestEngine:
             end_date=request.end_date + timedelta(days=5),
         )
         open_prices, close_prices, volume_data = _build_price_frames(market_data)
+        price_download_warnings = _build_price_download_warnings(
+            requested_symbols=candidate_universe,
+            available_symbols=list(close_prices),
+            benchmark_symbol=request.benchmark_symbol,
+        )
+        if request.ticker and request.ticker.upper() not in close_prices:
+            raise ValueError(
+                f"Unable to load price history for requested ticker {request.ticker.upper()} from Yahoo Finance. "
+                "Try another ticker or use a custom universe CSV with symbols that have available historical bars."
+            )
 
         await _notify(progress_callback, {"stage": "simulating_teams", "progress": 34})
         simulations: list[TeamSimulation] = []
@@ -308,6 +320,9 @@ class BacktestEngine:
                         volume_data=volume_data,
                         calendar=calendar,
                         rebalance_dates=rebalance_dates,
+                        progress_callback=progress_callback,
+                        progress_start=34 + int((index / max(1, len(execution_snapshots))) * 48),
+                        progress_end=34 + int(((index + 1) / max(1, len(execution_snapshots))) * 48),
                     )
                 )
         finally:
@@ -327,7 +342,7 @@ class BacktestEngine:
             requested_universe_id=request.universe_id,
             resolved_universe_id=universe_timeline.universe_id,
             source=universe_timeline.source,
-            warnings=universe_timeline.warnings,
+            warnings=[*universe_timeline.warnings, *price_download_warnings],
             dates=[
                 UniverseDateResolutionReport(
                     as_of_date=item.as_of_date,
@@ -359,7 +374,7 @@ class BacktestEngine:
             "cache_policy": request.cache_policy,
             "as_of_datetime": request.resolved_as_of_datetime,
             "universe_source": universe_timeline.source,
-            "universe_warnings": universe_timeline.warnings,
+            "universe_warnings": [*universe_timeline.warnings, *price_download_warnings],
             "team_equivalence_warnings": team_equivalence_warnings,
         }
         artifact = write_artifact(
@@ -388,6 +403,7 @@ class BacktestEngine:
             [
                 *historical_gap_report.warnings,
                 *universe_timeline.warnings,
+                *price_download_warnings,
                 *team_equivalence_warnings,
                 *primary_run.notes,
                 *primary_run.warnings,
@@ -480,8 +496,15 @@ class BacktestEngine:
         volume_data: dict[str, pd.Series],
         calendar: pd.Index,
         rebalance_dates: list[pd.Timestamp],
+        progress_callback: ProgressCallback | None,
+        progress_start: int,
+        progress_end: int,
     ) -> TeamSimulation:
-        executable_team = _historical_execution_team(base_snapshot.effective_team, profile)
+        executable_team = _historical_execution_team(
+            base_snapshot.effective_team,
+            profile,
+            strict_temporal_mode=request.resolved_strict_mode,
+        )
         runtime_settings = _build_backtest_settings(base_settings, executable_team)
         portfolio_config = build_portfolio_construction_config(request, runtime_settings, executable_team)
         max_gross_exposure_pct = portfolio_config.max_gross_exposure_pct
@@ -494,7 +517,11 @@ class BacktestEngine:
             cost_model=base_snapshot.cost_model,
             notes=[
                 *base_snapshot.notes,
-                "Historical replay executed only the agent families that are point-in-time faithful for this mode.",
+                (
+                    "Historical replay executed all enabled agent families; degraded families used replay-safe data and confidence penalties."
+                    if not request.resolved_strict_mode and profile.signature.degraded_agents
+                    else "Historical replay executed only the agent families that are point-in-time faithful for this mode."
+                ),
             ],
         )
         shared_budget = BudgetTracker(
@@ -593,6 +620,30 @@ class BacktestEngine:
                 cash_history.append(100.0)
                 gross_exposure_history.append(0.0)
             position_count_history.append(len(holdings))
+            live_progress = progress_start + int(((index + 1) / max(1, len(calendar))) * max(1, progress_end - progress_start))
+            await _notify(
+                progress_callback,
+                {
+                    "stage": "team_live",
+                    "progress": min(progress_end, live_progress),
+                    "team_live": _build_live_team_update(
+                        team=simulation_snapshot.effective_team,
+                        day=day,
+                        equity=equity,
+                        benchmark_equity=benchmark_curve[-1] if benchmark_curve else request.initial_cash,
+                        cash=cash,
+                        holdings=holdings,
+                        last_close=last_close,
+                        close_prices=close_prices,
+                        gross_exposure_pct=gross_exposure_history[-1],
+                        trades=trades,
+                        processed_days=index + 1,
+                        total_days=len(calendar),
+                        processed_rebalances=sum(1 for rebalance_day in rebalance_dates if rebalance_day <= day),
+                        total_rebalances=len(rebalance_dates),
+                    ),
+                },
+            )
 
             if day not in rebalance_dates or index + 1 >= len(calendar):
                 continue
@@ -741,13 +792,21 @@ class BacktestEngine:
             turnover_pct=metrics["turnover_pct"],
             max_sector_concentration_pct=metrics["max_sector_concentration_pct"],
             top_holdings_over_time=holdings_snapshots,
-            supported_agents=profile.signature.honored_agents,
+            supported_agents=[
+                agent
+                for agent in simulation_snapshot.effective_team.enabled_agents
+                if agent in VALID_ANALYSIS_AGENTS
+            ],
             degraded_agents=profile.signature.degraded_agents,
             excluded_agents=profile.signature.ignored_agents,
             notes=_dedupe(
                 [
                     profile.signature.summary,
-                    "Historical replay executed only point-in-time faithful agent families; degraded families remain diagnostic-only."
+                    (
+                        "Historical replay executed degraded agent families with confidence penalties and replay-safe source substitutions."
+                        if profile.signature.degraded_agents and not request.resolved_strict_mode
+                        else "Historical replay executed only point-in-time faithful agent families; degraded families remain diagnostic-only."
+                    )
                     if profile.signature.degraded_agents
                     else "",
                     (
@@ -977,12 +1036,24 @@ def _build_backtest_settings(user_settings: UserSettings, compiled_team) -> User
     return UserSettings.from_dict(payload)
 
 
-def _historical_execution_team(team: CompiledTeam, historical_profile: TeamHistoricalProfile) -> CompiledTeam:
-    executable_analysis = [
-        agent
-        for agent in team.enabled_agents
-        if agent in historical_profile.signature.honored_agents
-    ]
+def _historical_execution_team(
+    team: CompiledTeam,
+    historical_profile: TeamHistoricalProfile,
+    *,
+    strict_temporal_mode: bool,
+) -> CompiledTeam:
+    if strict_temporal_mode:
+        executable_analysis = [
+            agent
+            for agent in team.enabled_agents
+            if agent in historical_profile.signature.honored_agents
+        ]
+    else:
+        executable_analysis = [
+            agent
+            for agent in team.enabled_agents
+            if agent in VALID_ANALYSIS_AGENTS and float(team.agent_weights.get(agent, 0)) > 0
+        ]
     enabled_agents = [
         agent
         for agent in team.enabled_agents
@@ -1023,7 +1094,11 @@ def _validate_backtest_workload(
     violations: list[str] = []
     for snapshot in execution_snapshots:
         profile = historical_profiles[f"{snapshot.effective_team.team_id}:{snapshot.effective_team.version_number}"]
-        executable_team = _historical_execution_team(snapshot.effective_team, profile)
+        executable_team = _historical_execution_team(
+            snapshot.effective_team,
+            profile,
+            strict_temporal_mode=request.resolved_strict_mode,
+        )
         analysis_agent_count = len(
             [agent for agent in executable_team.enabled_agents if agent in VALID_ANALYSIS_AGENTS]
         )
@@ -1158,15 +1233,16 @@ async def _download_market_data(
 
 
 def _download_chunk(chunk: list[str], start_date: date, end_date: date) -> dict[str, pd.DataFrame]:
-    frame = yf.download(
-        tickers=chunk,
-        start=start_date.isoformat(),
-        end=end_date.isoformat(),
-        auto_adjust=False,
-        progress=False,
-        group_by="ticker",
-        threads=False,
-    )
+    with _suppress_yfinance_output():
+        frame = yf.download(
+            tickers=chunk,
+            start=start_date.isoformat(),
+            end=end_date.isoformat(),
+            auto_adjust=False,
+            progress=False,
+            group_by="ticker",
+            threads=False,
+        )
     if frame.empty:
         return {}
 
@@ -1212,6 +1288,81 @@ def _build_price_frames(
         if volume_column is not None:
             volumes[ticker] = pd.to_numeric(frame[volume_column], errors="coerce")
     return opens, closes, volumes
+
+
+def _build_price_download_warnings(
+    *,
+    requested_symbols: list[str],
+    available_symbols: list[str],
+    benchmark_symbol: str,
+) -> list[str]:
+    available = set(available_symbols)
+    missing = [
+        symbol for symbol in requested_symbols if symbol not in available and symbol not in {benchmark_symbol, "TLT", "^VIX"}
+    ]
+    if not missing:
+        return []
+    sample = ", ".join(missing[:12])
+    suffix = "" if len(missing) <= 12 else f", +{len(missing) - 12} more"
+    return [
+        (
+            f"Yahoo Finance price history was unavailable for {len(missing)} universe symbols. "
+            f"Those names were excluded from the backtest shortlist/simulation. Examples: {sample}{suffix}."
+        )
+    ]
+
+
+def _build_live_team_update(
+    *,
+    team,
+    day: pd.Timestamp,
+    equity: float,
+    benchmark_equity: float,
+    cash: float,
+    holdings: dict[str, float],
+    last_close: dict[str, float],
+    close_prices: dict[str, pd.Series],
+    gross_exposure_pct: float,
+    trades: list[dict[str, Any]],
+    processed_days: int,
+    total_days: int,
+    processed_rebalances: int,
+    total_rebalances: int,
+) -> dict[str, Any]:
+    holdings_rows: list[dict[str, Any]] = []
+    for ticker, shares in holdings.items():
+        close_price = _close_price(close_prices, ticker, day) or last_close.get(ticker)
+        if close_price is None:
+            continue
+        market_value = shares * close_price
+        weight_pct = 0.0 if equity <= 0 else (market_value / equity) * 100.0
+        holdings_rows.append(
+            {
+                "ticker": ticker,
+                "shares": round(float(shares), 6),
+                "price": round(float(close_price), 4),
+                "market_value": round(float(market_value), 2),
+                "weight_pct": round(float(weight_pct), 2),
+            }
+        )
+    holdings_rows.sort(key=lambda item: float(item["market_value"]), reverse=True)
+    return {
+        "team_id": team.team_id,
+        "team_name": team.name,
+        "version_number": team.version_number,
+        "timestamp": day.date().isoformat(),
+        "strategy_equity": round(float(equity), 2),
+        "benchmark_equity": round(float(benchmark_equity), 2),
+        "cash": round(float(cash), 2),
+        "gross_exposure_pct": round(float(gross_exposure_pct), 2),
+        "holdings_count": len(holdings_rows),
+        "holdings": holdings_rows[:5],
+        "recent_trades": trades[-5:],
+        "processed_days": processed_days,
+        "total_days": total_days,
+        "processed_rebalances": processed_rebalances,
+        "total_rebalances": total_rebalances,
+    }
 
 
 def _rebalance_dates(calendar: pd.Index, frequency: str) -> list[pd.Timestamp]:
@@ -1437,12 +1588,13 @@ def _allocate_capped_weights(raw_weights: list[float], caps: list[float], gross_
 
 def _download_single_symbol(symbol: str, start_date: date, end_date: date) -> pd.DataFrame:
     for candidate in _yahoo_symbol_candidates(symbol):
-        frame = yf.Ticker(candidate).history(
-            start=start_date.isoformat(),
-            end=end_date.isoformat(),
-            auto_adjust=False,
-            actions=False,
-        )
+        with _suppress_yfinance_output():
+            frame = yf.Ticker(candidate).history(
+                start=start_date.isoformat(),
+                end=end_date.isoformat(),
+                auto_adjust=False,
+                actions=False,
+            )
         if frame.empty:
             continue
         frame.index = pd.to_datetime(frame.index).tz_localize(None)
@@ -1461,6 +1613,13 @@ def _yahoo_symbol_candidates(symbol: str) -> list[str]:
     if alias and alias not in candidates:
         candidates.insert(0, alias)
     return candidates
+
+
+@contextmanager
+def _suppress_yfinance_output():
+    sink = StringIO()
+    with redirect_stdout(sink), redirect_stderr(sink):
+        yield
 
 
 def _apply_target_weights(

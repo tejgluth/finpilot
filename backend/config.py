@@ -84,7 +84,7 @@ class Settings(BaseSettings):
         return key[:4] + "***" + key[-2:]
 
     def available_data_sources(self) -> list[str]:
-        sources = ["yfinance", "fred", "edgar", "coingecko"]
+        sources = ["yfinance", "fred", "edgar", "sec_companyfacts", "gdelt", "coingecko"]
         if self.finnhub_api_key:
             sources.append("finnhub")
         if self.marketaux_api_key:

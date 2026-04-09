@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import type { StudioMode } from "../../api/types";
 import { useCustomTeamStore } from "../../stores/customTeamStore";
@@ -19,7 +19,11 @@ const MODE_TABS: { id: StudioMode; label: string }[] = [
   { id: "expert", label: "Expert" },
 ];
 
-export default function TeamStudio() {
+interface Props {
+  titleSlot?: ReactNode;
+}
+
+export default function TeamStudio({ titleSlot }: Props) {
   const {
     draft,
     compiledTeam,
@@ -131,10 +135,12 @@ export default function TeamStudio() {
       {/* Top bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <InlineTeamNameEditor
-            name={draft?.proposed_name ?? compiledTeam?.name ?? "Custom Team"}
-            onSave={updateTeamName}
-          />
+          {titleSlot ?? (
+            <InlineTeamNameEditor
+              name={draft?.proposed_name ?? compiledTeam?.name ?? "Custom Team"}
+              onSave={updateTeamName}
+            />
+          )}
           <TeamClassificationBadge classification={classification} size="md" />
         </div>
 

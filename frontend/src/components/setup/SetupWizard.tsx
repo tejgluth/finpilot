@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import ThinkingDots from "../common/ThinkingDots";
 import { useNavigate } from "react-router-dom";
 import { useSetupStore } from "../../stores/setupStore";
 import ApiKeyStep from "./ApiKeyStep";
@@ -15,7 +16,7 @@ export default function SetupWizard() {
   }, [refresh]);
 
   if (!status || !guides) {
-    return <div className="rounded-[28px] bg-white/80 p-6 shadow-soft">Loading setup state…</div>;
+    return <div className="rounded-[28px] bg-white/80 p-6 shadow-soft flex items-center gap-2">Loading setup state <ThinkingDots /></div>;
   }
 
   return (

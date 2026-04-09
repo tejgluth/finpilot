@@ -51,25 +51,25 @@ HISTORICAL_SUPPORT = {
         "support_level": "partial",
         "honored_in_strict": False,
         "degraded_in_experimental": True,
-        "reason": "Historical EDGAR is available, but yfinance/FMP fields degrade under strict point-in-time replay.",
+        "reason": "Historical replay can rebuild much of the signal from SEC CompanyFacts and EDGAR, but vendor consensus and snapshot-style fields remain partial.",
     },
     "value": {
         "support_level": "partial",
         "honored_in_strict": False,
         "degraded_in_experimental": True,
-        "reason": "Value ratios depend on non-point-in-time yfinance fields and filing text mixes.",
+        "reason": "Historical replay can rebuild valuation inputs from SEC CompanyFacts and filing text, but forward/vendor-style valuation fields remain partial.",
     },
     "growth": {
         "support_level": "partial",
         "honored_in_strict": False,
         "degraded_in_experimental": True,
-        "reason": "Growth metrics partially depend on current snapshots and incomplete historical earnings data.",
+        "reason": "Historical replay can reconstruct reported growth from SEC CompanyFacts, but surprise and consensus style fields remain partial.",
     },
     "sentiment": {
-        "support_level": "experimental",
+        "support_level": "partial",
         "honored_in_strict": False,
         "degraded_in_experimental": True,
-        "reason": "News/social providers are not fully reproducible point-in-time for historical replay.",
+        "reason": "Archived headline windows from Finnhub, Marketaux, and GDELT replay well, but social and options-context remain incomplete historically.",
     },
 }
 
@@ -152,9 +152,11 @@ def build_historical_gap_report(
                 )
             else:
                 degraded_agents.append(support)
+                if support.degraded_in_experimental:
+                    effective_weights[agent_name] = support.effective_weight
                 warnings.append(
                     f"{team.name} v{team.version_number}: {agent_name} is not point-in-time faithful for historical replay "
-                    f"and is excluded from executable decisions in this mode. {support.reason}"
+                    f"and will run with degraded historical weighting/confidence penalties in experimental mode. {support.reason}"
                 )
 
         if not honored_agents and strict_temporal_mode:
@@ -164,10 +166,10 @@ def build_historical_gap_report(
 
         summary_parts = []
         if honored_agents:
-            summary_parts.append(f"Honored: {', '.join(sorted(honored_agents))}.")
+            summary_parts.append(f"Full fidelity: {', '.join(sorted(honored_agents))}.")
         if degraded_agents:
             summary_parts.append(
-                "Historical limitations: "
+                ("Executed with historical degradation: " if not strict_temporal_mode else "Historical limitations: ")
                 + ", ".join(
                     f"{item.agent_name} ({item.support_level})" for item in degraded_agents
                 )
@@ -178,7 +180,7 @@ def build_historical_gap_report(
         if degraded_agents and degraded_weight_total >= max(honored_weight_total, 1.0):
             warnings.append(
                 f"{team.name} v{team.version_number}: most configured weight sits in agent families that are not "
-                "point-in-time faithful historically, so this replay may differ materially from the live/paper team."
+                "fully point-in-time faithful historically, so this replay may differ materially from the live/paper team."
             )
         if ignored_agents:
             summary_parts.append("Ignored in strict mode: " + ", ".join(sorted(ignored_agents)) + ".")
@@ -217,8 +219,8 @@ def build_equivalence_warnings(profiles: list[TeamHistoricalProfile]) -> list[st
         label = f"{profile.signature.team_name} v{profile.signature.version_number}"
         if signature_key in seen:
             warnings.append(
-                f"{label} and {seen[signature_key]} collapse to the same fully supported historical "
-                "signature. Any differences are currently in degraded historical agent families."
+                f"{label} and {seen[signature_key]} collapse to the same effective historical "
+                "signature. Any remaining differences are in non-executable or identically degraded agent families."
             )
         else:
             seen[signature_key] = label

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import ThinkingDots from "../components/common/ThinkingDots";
 import { useTradingStatus } from "../hooks/useTradingStatus";
 import GuardrailSettings from "../components/permissions/GuardrailSettings";
 import PermissionPanel from "../components/permissions/PermissionPanel";
@@ -32,7 +33,7 @@ export default function TradingPage() {
   }
 
   if (!permissions || !tradingStatus || !settings) {
-    return <div className="rounded-[28px] bg-white/80 p-6 shadow-soft">Loading trading state…</div>;
+    return <div className="rounded-[28px] bg-white/80 p-6 shadow-soft flex items-center gap-2">Loading trading state <ThinkingDots /></div>;
   }
 
   return (

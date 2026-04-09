@@ -26,9 +26,9 @@ export default function TradeLog({ runs }: { runs: TeamBacktestRun[] }) {
               {run.team_name} v{run.version_number}
             </div>
             <div className="grid gap-2 border-b border-ink/10 bg-white px-4 py-3 text-xs text-ink/65 md:grid-cols-3">
-              <div>Supported: {run.supported_agents.length ? run.supported_agents.join(", ") : "None"}</div>
+              <div>Executed: {run.supported_agents.length ? run.supported_agents.join(", ") : "None"}</div>
               <div>
-                Degraded: {run.degraded_agents.length ? run.degraded_agents.map((agent) => agent.agent_name).join(", ") : "None"}
+                Degraded but used: {run.degraded_agents.length ? run.degraded_agents.map((agent) => agent.agent_name).join(", ") : "None"}
               </div>
               <div>
                 Cache: {run.cache_usage.hits} hits / {run.cache_usage.misses} misses / {run.cache_usage.writes} writes

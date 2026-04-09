@@ -5,6 +5,8 @@ const labels: Array<[keyof DataSourceSettings, string]> = [
   ["use_yfinance", "yfinance"],
   ["use_fred", "FRED"],
   ["use_edgar", "SEC EDGAR"],
+  ["use_sec_companyfacts", "SEC CompanyFacts"],
+  ["use_gdelt", "GDELT"],
   ["use_coingecko", "CoinGecko"],
   ["use_alpaca_data", "Alpaca Data"],
   ["use_finnhub", "Finnhub"],

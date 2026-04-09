@@ -3,6 +3,8 @@ import type { ComparisonTarget } from "../../api/types";
 import { useSettings } from "../../hooks/useSettings";
 import { useStrategyStore } from "../../stores/strategyStore";
 import Panel from "../common/Panel";
+import ThinkingDots from "../common/ThinkingDots";
+import TeamSelectorDropdown from "../strategy/TeamSelectorDropdown";
 
 type UniverseMode = "single_ticker" | "current_sp500" | "csv_snapshot";
 type BacktestMode = "backtest_strict" | "backtest_experimental";
@@ -23,6 +25,8 @@ export default function BacktestPanel({
   const { settings } = useSettings();
   const activeTeam = useStrategyStore((state) => state.activeTeam);
   const teams = useStrategyStore((state) => state.teams);
+  const selectTeam = useStrategyStore((state) => state.selectTeam);
+  const strategySaving = useStrategyStore((state) => state.saving);
 
   const [universeMode, setUniverseMode] = useState<UniverseMode>("current_sp500");
   const [ticker, setTicker] = useState("AAPL");
@@ -112,7 +116,21 @@ export default function BacktestPanel({
   return (
     <Panel title="Backtest controls" eyebrow="Run">
       <div className="mb-4 rounded-2xl bg-slate px-4 py-3 text-sm text-ink/70">
-        Active team: {activeTeam ? `${activeTeam.compiled_team.name} v${activeTeam.version_number}` : "default team"}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-medium text-ink">Active team:</span>
+          <TeamSelectorDropdown
+            activeTeam={activeTeam}
+            align="left"
+            buttonClassName="max-w-full"
+            currentLabel={activeTeam?.compiled_team.name ?? "Default team"}
+            currentSubtitle={activeTeam ? `v${activeTeam.version_number} · backtest target` : undefined}
+            disabled={strategySaving}
+            labelClassName="text-base"
+            menuClassName="w-[min(28rem,calc(100vw-2rem))]"
+            onSelectTeam={(teamId, versionNumber) => selectTeam(teamId, versionNumber)}
+            teams={teams}
+          />
+        </div>
         {activeTeam?.compiled_team.portfolio_construction ? (
           <div className="mt-2 text-xs text-ink/55">
             Style: {activeTeam.compiled_team.portfolio_construction.concentration_style} · {activeTeam.compiled_team.portfolio_construction.weighting_mode} · {activeTeam.compiled_team.portfolio_construction.turnover_style} turnover
@@ -359,7 +377,7 @@ export default function BacktestPanel({
         onClick={() =>
           onRun({
             ticker: universeMode === "single_ticker" ? ticker : null,
-            universe_id: universeMode === "current_sp500" ? "current_sp500" : "current_sp500",
+            universe_id: universeMode === "current_sp500" ? "current_sp500" : null,
             custom_universe_csv: universeMode === "csv_snapshot" ? customUniverseCsv : null,
             start_date: startDate,
             end_date: endDate,
@@ -402,7 +420,7 @@ export default function BacktestPanel({
           })
         }
       >
-        {loading ? "Running…" : "Run truthful backtest"}
+        {loading ? <ThinkingDots className="text-white" /> : "Run truthful backtest"}
       </button>
     </Panel>
   );

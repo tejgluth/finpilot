@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../../api/client";
 import Panel from "../common/Panel";
+import ThinkingDots from "../common/ThinkingDots";
 
 export default function KillSwitch({
   active,
@@ -29,7 +30,7 @@ export default function KillSwitch({
         onClick={() => void toggle()}
         disabled={saving}
       >
-        {saving ? "Updating…" : active ? "Resume system" : "Activate kill switch"}
+        {saving ? <ThinkingDots className="text-white" /> : active ? "Resume system" : "Activate kill switch"}
       </button>
     </Panel>
   );

@@ -162,7 +162,7 @@ class YFinanceAdapter(DataAdapter):
         *,
         point_in_time_required: bool = False,
     ) -> float | None:
-        if point_in_time_required:
+        if point_in_time_required or as_of_datetime is not None:
             return None
 
         cache_key = self._cache_key("options-put-call", ticker.upper())
@@ -520,7 +520,7 @@ class YFinanceAdapter(DataAdapter):
             numeric = float(value)
             if numeric <= 0:
                 break
-            if previous is not None and numeric < previous:
+            if previous is not None and numeric > previous:
                 break
             count += 1
             previous = numeric

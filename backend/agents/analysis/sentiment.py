@@ -1,8 +1,15 @@
 from __future__ import annotations
 
 from backend.agents.base_agent import BaseAnalysisAgent, FetchedData
+from backend.data.adapters import (
+    FinnhubAdapter,
+    GdeltAdapter,
+    MarketauxAdapter,
+    RedditAdapter,
+    SecCompanyFactsAdapter,
+    YFinanceAdapter,
+)
 from backend.models.agent_team import CompiledAgentSpec, ExecutionSnapshot
-from backend.data.adapters import FinnhubAdapter, MarketauxAdapter, RedditAdapter, YFinanceAdapter
 from backend.security.input_sanitizer import ContentSource, sanitize
 from backend.settings.user_settings import DataSourceSettings
 
@@ -29,24 +36,29 @@ class SentimentAgent(BaseAnalysisAgent):
     ) -> FetchedData:
         data = FetchedData(ticker=ticker.upper())
         as_of = execution_snapshot.data_boundary.as_of_datetime
-        point_in_time_required = execution_snapshot.strict_temporal_mode
+        historical_replay = as_of is not None
         allowed_sources = set(compiled_spec.owned_sources)
+        headline_scores: list[float] = []
+        headline_count = 0
+        headline_sources: list[str] = []
+        headline_ages: list[float] = []
+        sanitized_highlights: list[str] = []
+        company_name = None
+
+        if data_settings.use_sec_companyfacts:
+            company = await SecCompanyFactsAdapter().lookup_company(ticker)
+            company_name = company["name"] if company else None
+
         if data_settings.use_finnhub and "finnhub" in allowed_sources:
             snapshot = await FinnhubAdapter().get_news_snapshot(ticker, as_of_datetime=as_of)
             highlights = snapshot.get("highlights") or []
-            if highlights:
-                excerpt = sanitize(" ".join(highlights), ContentSource.NEWS_BODY)
-                data.fields["sanitized_news_excerpt"] = excerpt.sanitized_text
-                data.field_sources["sanitized_news_excerpt"] = "finnhub"
-                data.field_ages["sanitized_news_excerpt"] = 30.0
             if snapshot.get("headline_sentiment") is not None:
-                data.fields["headline_sentiment"] = snapshot["headline_sentiment"]
-                data.field_sources["headline_sentiment"] = "finnhub"
-                data.field_ages["headline_sentiment"] = 30.0
+                headline_scores.append(float(snapshot["headline_sentiment"]))
+                headline_sources.append("finnhub")
+                headline_ages.append(30.0)
             if snapshot.get("headline_count") is not None:
-                data.fields["headline_count"] = snapshot["headline_count"]
-                data.field_sources["headline_count"] = "finnhub"
-                data.field_ages["headline_count"] = 30.0
+                headline_count += int(snapshot["headline_count"])
+            sanitized_highlights.extend(str(item) for item in highlights)
         else:
             data.failed_sources.append("finnhub")
 
@@ -60,10 +72,27 @@ class SentimentAgent(BaseAnalysisAgent):
                 data.fields["entity_mentions"] = snapshot["entity_mentions"]
                 data.field_sources["entity_mentions"] = "marketaux"
                 data.field_ages["entity_mentions"] = 45.0
+            sanitized_highlights.extend(str(item) for item in snapshot.get("highlights", []))
         else:
             data.failed_sources.append("marketaux")
 
-        if data_settings.use_reddit and "reddit" in allowed_sources:
+        if data_settings.use_gdelt and "gdelt" in allowed_sources:
+            snapshot = await GdeltAdapter().get_news_snapshot(
+                ticker,
+                company_name=company_name,
+                as_of_datetime=as_of,
+            )
+            if snapshot.get("headline_sentiment") is not None:
+                headline_scores.append(float(snapshot["headline_sentiment"]))
+                headline_sources.append("gdelt")
+                headline_ages.append(60.0)
+            if snapshot.get("headline_count") is not None:
+                headline_count += int(snapshot["headline_count"])
+            sanitized_highlights.extend(str(item) for item in snapshot.get("highlights", []))
+        else:
+            data.failed_sources.append("gdelt")
+
+        if data_settings.use_reddit and "reddit" in allowed_sources and not historical_replay:
             snapshot = await RedditAdapter().get_social_snapshot(ticker, as_of_datetime=as_of)
             if snapshot.get("mention_count") is not None:
                 data.fields["reddit_mentions"] = snapshot["mention_count"]
@@ -73,6 +102,8 @@ class SentimentAgent(BaseAnalysisAgent):
                 data.fields["reddit_upvote_ratio"] = snapshot["upvote_ratio"]
                 data.field_sources["reddit_upvote_ratio"] = "reddit"
                 data.field_ages["reddit_upvote_ratio"] = 60.0
+        elif not historical_replay:
+            data.failed_sources.append("reddit")
         else:
             data.failed_sources.append("reddit")
 
@@ -80,13 +111,27 @@ class SentimentAgent(BaseAnalysisAgent):
             data.fields["put_call_ratio"] = await YFinanceAdapter().get_options_put_call_ratio(
                 ticker,
                 as_of_datetime=as_of,
-                point_in_time_required=point_in_time_required,
+                point_in_time_required=False,
             )
             if data.fields["put_call_ratio"] is not None:
                 data.field_sources["put_call_ratio"] = "yfinance"
                 data.field_ages["put_call_ratio"] = 15.0
         else:
             data.failed_sources.append("yfinance")
+
+        if headline_scores:
+            data.fields["headline_sentiment"] = round(sum(headline_scores) / len(headline_scores), 6)
+            data.field_sources["headline_sentiment"] = "+".join(dict.fromkeys(headline_sources))
+            data.field_ages["headline_sentiment"] = max(headline_ages, default=45.0)
+        if headline_count > 0:
+            data.fields["headline_count"] = headline_count
+            data.field_sources["headline_count"] = "+".join(dict.fromkeys(headline_sources)) or "news"
+            data.field_ages["headline_count"] = max(headline_ages, default=45.0)
+        if sanitized_highlights:
+            excerpt = sanitize(" ".join(dict.fromkeys(sanitized_highlights)), ContentSource.NEWS_BODY)
+            data.fields["sanitized_news_excerpt"] = excerpt.sanitized_text
+            data.field_sources["sanitized_news_excerpt"] = "+".join(dict.fromkeys(headline_sources)) or "news"
+            data.field_ages["sanitized_news_excerpt"] = max(headline_ages, default=45.0)
         return data
 
     def build_system_prompt(self) -> str:

@@ -4,12 +4,13 @@ from datetime import timedelta
 
 from backend.config import settings
 from backend.data.adapters.base import AdapterFetchResult, DataAdapter, iso_timestamp, parse_as_of_date
+from backend.data.adapters.headline_sentiment import normalize_headlines, score_headlines
 
 
 class FinnhubAdapter(DataAdapter):
     source_name = "finnhub"
     default_ttl_minutes = 30
-    supports_point_in_time = False
+    supports_point_in_time = True
 
     async def fetch(self, ticker: str, as_of_datetime: str | None = None) -> AdapterFetchResult:
         payload = await self.get_news_snapshot(ticker, as_of_datetime=as_of_datetime)
@@ -41,13 +42,15 @@ class FinnhubAdapter(DataAdapter):
         if not isinstance(news, list):
             return {}
 
-        highlights = [
+        highlights = normalize_headlines(
+            [
             item.get("headline", "").strip()
             for item in news[:8]
             if isinstance(item, dict) and item.get("headline")
-        ]
+            ]
+        )
 
-        sentiment_score = None
+        sentiment_score = score_headlines(highlights)
         if as_of_datetime is None:
             try:
                 sentiment = await self._get_json(
@@ -61,9 +64,13 @@ class FinnhubAdapter(DataAdapter):
                 sentiment = {}
             company_news_score = sentiment.get("companyNewsScore") if isinstance(sentiment, dict) else None
             try:
-                sentiment_score = None if company_news_score is None else round(float(company_news_score), 6)
+                provider_score = None if company_news_score is None else round(float(company_news_score), 6)
             except (TypeError, ValueError):
-                sentiment_score = None
+                provider_score = None
+            if provider_score is not None and sentiment_score is not None:
+                sentiment_score = round((provider_score + sentiment_score) / 2.0, 6)
+            elif provider_score is not None:
+                sentiment_score = provider_score
 
         return {
             "headline_sentiment": sentiment_score,

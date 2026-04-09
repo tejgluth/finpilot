@@ -1,8 +1,21 @@
+import type { TeamVersion } from "../../api/types";
 import type { VisualizationModel } from "../../lib/teamVisualization/types";
+import TeamSelectorDropdown, {
+  type TeamSelectorExtraOption,
+} from "../strategy/TeamSelectorDropdown";
 
 interface Props {
   model: VisualizationModel;
   teamName?: string;
+  teamSelector?: {
+    teams: TeamVersion[];
+    activeTeam: TeamVersion | null;
+    onSelectTeam: (teamId: string, versionNumber: number) => void | Promise<void>;
+    currentLabel?: string;
+    currentSubtitle?: string;
+    extraOptions?: TeamSelectorExtraOption[];
+    disabled?: boolean;
+  };
 }
 
 const RISK_COLOR: Record<string, string> = {
@@ -37,7 +50,7 @@ function Chip({
  * Plain-English summary panel rendered above the ReactFlow graph.
  * Renders instantly without waiting for the graph to mount.
  */
-export default function TeamSummaryPanel({ model, teamName }: Props) {
+export default function TeamSummaryPanel({ model, teamName, teamSelector }: Props) {
   const riskCls =
     RISK_COLOR[model.riskLevel] ?? "bg-slate text-ink/70";
   const horizonCls =
@@ -51,7 +64,20 @@ export default function TeamSummaryPanel({ model, teamName }: Props) {
   return (
     <div className="space-y-3">
       {teamName ? (
-        <h2 className="font-display text-2xl text-ink">{teamName}</h2>
+        teamSelector ? (
+          <TeamSelectorDropdown
+            activeTeam={teamSelector.activeTeam}
+            currentLabel={teamSelector.currentLabel ?? teamName}
+            currentSubtitle={teamSelector.currentSubtitle}
+            disabled={teamSelector.disabled}
+            extraOptions={teamSelector.extraOptions}
+            labelClassName="text-2xl"
+            onSelectTeam={teamSelector.onSelectTeam}
+            teams={teamSelector.teams}
+          />
+        ) : (
+          <h2 className="font-display text-2xl text-ink">{teamName}</h2>
+        )
       ) : null}
 
       {/* Chips row */}

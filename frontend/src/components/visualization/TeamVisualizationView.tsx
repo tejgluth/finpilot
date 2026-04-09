@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import type { CompiledTeam, TeamComparison } from "../../api/types";
+import type { CompiledTeam, TeamComparison, TeamVersion } from "../../api/types";
 import { applyLayout } from "../../lib/teamVisualization/layout";
 import { compiledTeamToVisualizationModel } from "../../lib/teamVisualization/transform";
 import type { VisualizationNode } from "../../lib/teamVisualization/types";
+import type { TeamSelectorExtraOption } from "../strategy/TeamSelectorDropdown";
 import AgentDetailDrawer from "./AgentDetailDrawer";
 import TeamSummaryPanel from "./TeamSummaryPanel";
 import TeamVisualizationGraph from "./TeamVisualizationGraph";
@@ -12,6 +13,15 @@ interface Props {
   comparison: TeamComparison | null;
   /** When true, comparison diff overlays are visible on nodes/edges */
   showComparison: boolean;
+  teamSelector?: {
+    teams: TeamVersion[];
+    activeTeam: TeamVersion | null;
+    onSelectTeam: (teamId: string, versionNumber: number) => void | Promise<void>;
+    currentLabel?: string;
+    currentSubtitle?: string;
+    extraOptions?: TeamSelectorExtraOption[];
+    disabled?: boolean;
+  };
 }
 
 /**
@@ -22,6 +32,7 @@ export default function TeamVisualizationView({
   team,
   comparison,
   showComparison,
+  teamSelector,
 }: Props) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
@@ -42,7 +53,7 @@ export default function TeamVisualizationView({
   return (
     <div className="space-y-4">
       {/* Plain-English summary above the graph */}
-      <TeamSummaryPanel model={model} teamName={team.name} />
+      <TeamSummaryPanel model={model} teamName={team.name} teamSelector={teamSelector} />
 
       {/* Hint bar */}
       <p className="text-xs text-ink/45">

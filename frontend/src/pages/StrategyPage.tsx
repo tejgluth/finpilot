@@ -1,17 +1,21 @@
 import clsx from "clsx";
+import ThinkingDots from "../components/common/ThinkingDots";
 import { useEffect, useState } from "react";
+import InlineTeamNameEditor from "../components/studio/InlineTeamNameEditor";
 import TeamClassificationBadge from "../components/studio/TeamClassificationBadge";
 import TeamStudio from "../components/studio/TeamStudio";
 import AgentTeamCard from "../components/strategy/AgentTeamCard";
 import PremadeTeamBrowser from "../components/strategy/PremadeTeamBrowser";
 import SavedTeamsPanel from "../components/strategy/SavedTeamsPanel";
 import StrategyChat from "../components/strategy/StrategyChat";
+import TeamSelectorDropdown from "../components/strategy/TeamSelectorDropdown";
 import TeamComparison from "../components/strategy/TeamComparison";
 import TeamVisualizationView from "../components/visualization/TeamVisualizationView";
 import { useCustomTeamStore } from "../stores/customTeamStore";
 import { useStrategyStore } from "../stores/strategyStore";
 
 type Tab = "build" | "visualize" | "compare" | "custom";
+type CustomVisualizationMode = "custom" | "saved";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "build", label: "Build" },
@@ -52,6 +56,7 @@ function EmptyState({
 export default function StrategyPage() {
   const [activeTab, setActiveTab] = useState<Tab>("build");
   const [customSeedPrompt, setCustomSeedPrompt] = useState("");
+  const [customVisualizationMode, setCustomVisualizationMode] = useState<CustomVisualizationMode>("custom");
 
   const {
     activeTeam,
@@ -65,6 +70,7 @@ export default function StrategyPage() {
     loadPremadeCatalog,
     premadeCatalog,
     saveDraft,
+    saving,
     selectTeam,
     deleteTeam,
     sendMessage,
@@ -88,6 +94,7 @@ export default function StrategyPage() {
     clearError: clearCustomError,
     saveTeam: saveCustomTeam,
     saving: savingCustom,
+    updateTeamName: updateCustomTeamName,
   } = useCustomTeamStore();
 
   useEffect(() => {
@@ -99,6 +106,12 @@ export default function StrategyPage() {
     void hydrateCustom();
   }, [hydrateCustom]);
 
+  useEffect(() => {
+    if (!customConversation) {
+      setCustomVisualizationMode("custom");
+    }
+  }, [customConversation]);
+
   async function handleCustomStart(e: React.FormEvent) {
     e.preventDefault();
     const prompt = customSeedPrompt.trim() || undefined;
@@ -108,6 +121,12 @@ export default function StrategyPage() {
 
   const latestTurn = customConversation?.latest_turn;
   const hasCustomTopology = Boolean(customDraft?.topology?.nodes?.length);
+  const hasCustomVisualization = hasCustomTopology || Boolean(customCompiledTeam);
+  const customVisualizationLabel =
+    customCompiledTeam?.name ?? customDraft?.proposed_name ?? "Current custom draft";
+  const customVisualizationSubtitle =
+    customCompiledTeam ? "Current custom builder draft" : "In-progress custom team";
+  const strategyVisualizationTeam = activeTeam?.compiled_team ?? compiledTeam;
   const modeBadges = latestTurn
     ? [
         { label: "Analyze", supported: latestTurn.mode_compatibility.analyze },
@@ -210,11 +229,19 @@ export default function StrategyPage() {
         id="panel-visualize"
         role="tabpanel"
       >
-        {compiledTeam ? (
+        {strategyVisualizationTeam ? (
           <TeamVisualizationView
             comparison={comparison}
             showComparison={false}
-            team={compiledTeam}
+            team={strategyVisualizationTeam}
+            teamSelector={{
+              activeTeam,
+              currentLabel: activeTeam?.compiled_team.name ?? strategyVisualizationTeam.name,
+              currentSubtitle: activeTeam ? `v${activeTeam.version_number} · active team` : undefined,
+              disabled: saving,
+              onSelectTeam: (teamId, versionNumber) => selectTeam(teamId, versionNumber),
+              teams,
+            }}
           />
         ) : (
           <EmptyState
@@ -307,7 +334,7 @@ export default function StrategyPage() {
                   disabled={customLoading}
                   type="submit"
                 >
-                  {customLoading ? "Starting…" : "Start building"}
+                  {customLoading ? <ThinkingDots className="text-white" /> : "Start building"}
                 </button>
               </div>
             </form>
@@ -315,11 +342,67 @@ export default function StrategyPage() {
         ) : (
           <div className="space-y-6">
             {/* Visualization at the top */}
-            {hasCustomTopology ? (
-              <TeamStudio />
+            {customVisualizationMode === "saved" && activeTeam ? (
+              <TeamVisualizationView
+                comparison={null}
+                showComparison={false}
+                team={activeTeam.compiled_team}
+                teamSelector={{
+                  activeTeam,
+                  currentLabel: activeTeam.compiled_team.name,
+                  currentSubtitle: `v${activeTeam.version_number} · active team`,
+                  disabled: saving,
+                  extraOptions: hasCustomVisualization
+                    ? [
+                        {
+                          key: "custom-draft",
+                          label: customVisualizationLabel,
+                          subtitle: customVisualizationSubtitle,
+                          active: false,
+                          onSelect: () => setCustomVisualizationMode("custom"),
+                        },
+                      ]
+                    : [],
+                  onSelectTeam: async (teamId, versionNumber) => {
+                    await selectTeam(teamId, versionNumber);
+                    setCustomVisualizationMode("saved");
+                  },
+                  teams,
+                }}
+              />
+            ) : hasCustomTopology ? (
+              <TeamStudio
+                titleSlot={
+                  <TeamSelectorDropdown
+                    activeTeam={activeTeam}
+                    currentLabel={customVisualizationLabel}
+                    currentSubtitle={customVisualizationSubtitle}
+                    disabled={saving}
+                    extraOptions={
+                      hasCustomVisualization
+                        ? [
+                            {
+                              key: "custom-draft",
+                              label: customVisualizationLabel,
+                              subtitle: customVisualizationSubtitle,
+                              active: true,
+                              onSelect: () => setCustomVisualizationMode("custom"),
+                            },
+                          ]
+                        : []
+                    }
+                    labelClassName="text-lg"
+                    onSelectTeam={async (teamId, versionNumber) => {
+                      await selectTeam(teamId, versionNumber);
+                      setCustomVisualizationMode("saved");
+                    }}
+                    teams={teams}
+                  />
+                }
+              />
             ) : (
               <div className="flex h-32 items-center justify-center rounded-[20px] border border-ink/8 bg-white text-[13px] text-ink/40">
-                Building topology…
+                Building topology <ThinkingDots className="text-ink/40" />
               </div>
             )}
 
@@ -340,7 +423,7 @@ export default function StrategyPage() {
                   onClick={() => void compileCustomDraft()}
                   type="button"
                 >
-                  {customLoading ? "Compiling…" : "Compile team →"}
+                  {customLoading ? <ThinkingDots className="text-white" /> : "Compile team →"}
                 </button>
               </div>
             )}
@@ -350,7 +433,10 @@ export default function StrategyPage() {
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-ink/8 bg-white px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div>
-                    <p className="font-semibold text-ink">{customCompiledTeam.name}</p>
+                    <InlineTeamNameEditor
+                      name={customCompiledTeam.name}
+                      onSave={(name) => void updateCustomTeamName(name)}
+                    />
                     <p className="text-[12px] text-ink/50">{customCompiledTeam.description}</p>
                   </div>
                   <TeamClassificationBadge
@@ -372,7 +458,7 @@ export default function StrategyPage() {
                     onClick={() => void saveCustomTeam(`${customCompiledTeam.name} — Custom`)}
                     type="button"
                   >
-                    {savingCustom ? "Saving…" : "Save team"}
+                    {savingCustom ? <ThinkingDots className="text-white" /> : "Save team"}
                   </button>
                 </div>
               </div>

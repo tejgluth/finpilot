@@ -1,6 +1,7 @@
 import { startTransition, useDeferredValue, useState } from "react";
 import type { StrategyConversation } from "../../api/types";
 import Panel from "../common/Panel";
+import ThinkingDots from "../common/ThinkingDots";
 
 export default function StrategyChat({
   conversation,
@@ -36,21 +37,28 @@ export default function StrategyChat({
         <div className="max-h-[420px] overflow-y-auto rounded-[24px] bg-slate/70 p-4">
           <div className="space-y-3">
             {deferredMessages.length ? (
-              deferredMessages.map((message) => (
-                <div
-                  className={`max-w-[90%] rounded-[22px] px-4 py-3 text-sm ${
-                    message.role === "user"
-                      ? "ml-auto bg-tide text-white"
-                      : "bg-white text-ink shadow-soft"
-                  }`}
-                  key={message.message_id}
-                >
-                  <div className="mb-1 text-[10px] font-mono uppercase tracking-[0.3em] opacity-70">
-                    {message.role} / {message.message_type}
+              <>
+                {deferredMessages.map((message) => (
+                  <div
+                    className={`max-w-[90%] rounded-[22px] px-4 py-3 text-sm ${
+                      message.role === "user"
+                        ? "ml-auto bg-tide text-white"
+                        : "bg-white text-ink shadow-soft"
+                    }`}
+                    key={message.message_id}
+                  >
+                    <div className="mb-1 text-[10px] font-mono uppercase tracking-[0.3em] opacity-70">
+                      {message.role} / {message.message_type}
+                    </div>
+                    <div>{message.content}</div>
                   </div>
-                  <div>{message.content}</div>
-                </div>
-              ))
+                ))}
+                {loading && (
+                  <div className="max-w-[90%] rounded-[22px] bg-white px-4 py-3 text-ink shadow-soft">
+                    <ThinkingDots />
+                  </div>
+                )}
+              </>
             ) : (
               <p className="text-sm text-ink/60">
                 Start with a concrete request such as “Build a short-term semiconductor breakout team with sentiment
@@ -85,7 +93,7 @@ export default function StrategyChat({
               disabled={loading}
               type="submit"
             >
-              {loading ? "Thinking…" : "Send"}
+              {loading ? <ThinkingDots className="text-white" /> : "Send"}
             </button>
           </div>
         </form>

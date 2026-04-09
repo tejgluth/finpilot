@@ -7,6 +7,8 @@ from typing import Any
 from backend.database import load_backtest_cache, store_backtest_cache
 from backend.models.agent_team import ExecutionSnapshot
 
+PIPELINE_CACHE_SCHEMA_VERSION = "v2"
+
 
 def build_pipeline_cache_key(
     *,
@@ -17,6 +19,7 @@ def build_pipeline_cache_key(
     backtest_mode: str,
 ) -> str:
     payload = {
+        "schema_version": PIPELINE_CACHE_SCHEMA_VERSION,
         "team_hash": execution_snapshot.team_hash,
         "team_id": execution_snapshot.effective_team.team_id,
         "version_number": execution_snapshot.effective_team.version_number,

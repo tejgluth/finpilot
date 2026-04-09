@@ -31,12 +31,11 @@ FinPilot is a local-only investing workspace for:
 
 ## Important Current Limits
 
-- Strict multi-stock backtests require a dated CSV snapshot. FinPilot intentionally blocks `current_sp500` in strict mode to avoid survivorship bias.
-- The current universe backtester only scores factor families that are honestly supported with historical market data today:
+- The universe backtester only scores factor families that are honestly supported with historical market data today:
   - `technicals`
   - `momentum`
   - `macro`
-- These agent families are explicitly excluded from bulk universe scoring until point-in-time support is added:
+- These agent families are excluded from bulk universe scoring until point-in-time support is added:
   - `fundamentals`
   - `value`
   - `growth`
@@ -52,21 +51,39 @@ FinPilot is a local-only investing workspace for:
 - Unsupported data paths fail closed. If a provider cannot answer honestly, FinPilot returns `UNAVAILABLE` or disables that factor.
 - Every backtest stores config, cost model, execution snapshot, benchmark, and artifact hash.
 
+## Prerequisites
+
+- **Python ≥ 3.11** — `python3 --version` to check
+- **Node.js ≥ 18** — `node --version` to check
+- `uv` and `pnpm` are installed automatically by `setup.sh` if missing
+
 ## Quick Start
 
-1. Run `./setup.sh`
-2. If prompted, copy `.env.example` to `.env`
-3. Add only the keys you actually want to use
-4. Re-run `./setup.sh`
+1. Clone the repo and run `./setup.sh`
+2. The script copies `.env.example` → `.env` on first run and opens the browser
+3. Add your API keys through the in-browser setup wizard
+4. Re-run `./setup.sh` to restart after adding keys
 
 The setup script installs `uv` and `pnpm`, validates configuration, creates local data folders, starts the backend, and opens the frontend.
 
 ## Verification
 
-- Backend tests: `uv run pytest backend/tests`
-- Ruff: `uv run ruff check backend`
-- Frontend typecheck: `pnpm --dir frontend typecheck`
-- Frontend build: `pnpm --dir frontend build`
+```bash
+# Backend tests
+uv run pytest backend/tests
+
+# Lint
+uv run ruff check backend
+
+# Frontend typecheck
+pnpm --dir frontend typecheck
+
+# Frontend build
+pnpm --dir frontend build
+
+# Smoke test (backend boot check)
+bash scripts/smoke_test.sh
+```
 
 ## Safety
 
@@ -75,4 +92,4 @@ The setup script installs `uv` and `pnpm`, validates configuration, creates loca
 - LLM output is schema-validated before it can influence trading behavior.
 - Every decision and trade event is written to the local immutable audit log.
 
-Read [RISK_DISCLOSURE.md](/Users/speakeasy/Projects/finpilot/RISK_DISCLOSURE.md) before enabling any live trading feature.
+Read [RISK_DISCLOSURE.md](RISK_DISCLOSURE.md) before enabling any live trading feature.

@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import type { TradeOrderPreview } from "../../api/types";
 import { useStrategyStore } from "../../stores/strategyStore";
 import Panel from "../common/Panel";
+import ThinkingDots from "../common/ThinkingDots";
 import OrderConfirm from "./OrderConfirm";
 
 export default function TradeTicket({ onSubmitted }: { onSubmitted?: () => void }) {
@@ -71,7 +72,7 @@ export default function TradeTicket({ onSubmitted }: { onSubmitted?: () => void 
       {error ? <div className="mt-4 rounded-2xl bg-ember/10 px-4 py-3 text-sm text-ember">{error}</div> : null}
       {success ? <div className="mt-4 rounded-2xl bg-pine/10 px-4 py-3 text-sm text-pine">{success}</div> : null}
       <button className="mt-4 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white" disabled={saving} onClick={() => void submit(false)}>
-        {saving ? "Submitting…" : "Preview or submit"}
+        {saving ? <ThinkingDots className="text-white" /> : "Preview or submit"}
       </button>
 
       <OrderConfirm

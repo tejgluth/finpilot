@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Panel from "../common/Panel";
+import ThinkingDots from "../common/ThinkingDots";
 
 type SettingsValue = string | number | boolean;
 
@@ -179,7 +180,7 @@ export default function SettingsSectionEditor({
             onClick={submit}
             type="button"
           >
-            {busy ? "Saving…" : "Save changes"}
+            {busy ? <ThinkingDots className="text-white" /> : "Save changes"}
           </button>
         </div>
       </div>

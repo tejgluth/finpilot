@@ -3,6 +3,7 @@ import BacktestPanel from "../components/backtest/BacktestPanel";
 import BullBearDebate from "../components/backtest/BullBearDebate";
 import EquityCurve from "../components/backtest/EquityCurve";
 import ArtifactBadge from "../components/backtest/ArtifactBadge";
+import BacktestLivePanel from "../components/backtest/BacktestLivePanel";
 import MetricsTable from "../components/backtest/MetricsTable";
 import SignalTrace from "../components/backtest/SignalTrace";
 import TradeLog from "../components/backtest/TradeLog";
@@ -10,7 +11,7 @@ import { useBacktestStream } from "../hooks/useBacktestStream";
 import { useStrategyStore } from "../stores/strategyStore";
 
 export default function BacktestPage() {
-  const { result, loading, progress, runBacktest, error } = useBacktestStream();
+  const { result, loading, stage, liveTeams, runBacktest, error } = useBacktestStream();
   const hydrateStrategy = useStrategyStore((state) => state.hydrate);
 
   useEffect(() => {
@@ -21,9 +22,7 @@ export default function BacktestPage() {
     <div className="space-y-6">
       <BacktestPanel loading={loading} onRun={(payload) => void runBacktest(payload)} />
       {loading ? (
-        <div className="rounded-[24px] bg-white/80 px-4 py-3 text-sm text-ink/70">
-          Backtest progress: {progress}%
-        </div>
+        <BacktestLivePanel liveTeams={liveTeams} stage={stage} />
       ) : null}
       {error ? <div className="rounded-[24px] bg-ember/10 px-4 py-3 text-sm text-ember">{error}</div> : null}
       {result ? (

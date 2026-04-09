@@ -60,8 +60,14 @@ class MarketauxAdapter(DataAdapter):
                     continue
 
         entity_sentiment = round(sum(sentiments) / len(sentiments), 6) if sentiments else None
+        highlights = [
+            str(item.get("title", "")).strip()
+            for item in items[:6]
+            if isinstance(item, dict) and item.get("title")
+        ]
         return {
             "entity_sentiment": entity_sentiment,
             "entity_mentions": mentions,
-            "summary": None,
+            "summary": " | ".join(highlights) if highlights else None,
+            "highlights": highlights,
         }

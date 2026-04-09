@@ -8,6 +8,7 @@ import type {
   SetupStatus,
 } from "../../api/types";
 import Panel from "../common/Panel";
+import ThinkingDots from "../common/ThinkingDots";
 import StatusBadge from "../common/StatusBadge";
 
 
@@ -397,7 +398,7 @@ export default function ApiKeyStep({
                 onClick={() => startTransition(() => void submit())}
                 type="button"
               >
-                {saving || isPending ? "Saving locally…" : "Save to .env"}
+                {saving || isPending ? <ThinkingDots className="text-ink" /> : "Save to .env"}
               </button>
             </div>
           </div>

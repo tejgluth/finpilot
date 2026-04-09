@@ -1,6 +1,7 @@
 import { useState } from "react";
 import clsx from "clsx";
 import type { ArchitecturePatch } from "../../api/types";
+import ThinkingDots from "../common/ThinkingDots";
 
 interface Props {
   pendingPatch: ArchitecturePatch | null;
@@ -115,7 +116,7 @@ export default function LLMRefinementPanel({
           disabled={patchLoading || !instruction.trim()}
           type="submit"
         >
-          {patchLoading ? "Generating…" : "Suggest change"}
+          {patchLoading ? <ThinkingDots /> : "Suggest change"}
         </button>
         <p className="text-center text-[10px] text-ink/30">
           AI-suggested changes require your confirmation before applying.

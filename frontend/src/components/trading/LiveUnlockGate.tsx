@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import type { TradingStatusPayload } from "../../api/types";
 import Panel from "../common/Panel";
 import StatusBadge from "../common/StatusBadge";
+import ThinkingDots from "../common/ThinkingDots";
 
 export default function LiveUnlockGate({
   status,
@@ -46,7 +47,7 @@ export default function LiveUnlockGate({
         disabled={saving}
         onClick={() => void toggle()}
       >
-        {saving ? "Updating…" : status.live_trading_enabled ? "Disable live gate" : "Enable live gate"}
+        {saving ? <ThinkingDots className="text-white" /> : status.live_trading_enabled ? "Disable live gate" : "Enable live gate"}
       </button>
     </Panel>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { PremadeTeamCatalog, PremadeTeamTemplate } from "../../api/types";
 import Panel from "../common/Panel";
+import ThinkingDots from "../common/ThinkingDots";
 
 const RISK_COLORS: Record<string, string> = {
   conservative: "bg-emerald-100 text-emerald-800",
@@ -72,7 +73,7 @@ function TeamCard({
         onClick={() => onApply(template.team_id)}
         type="button"
       >
-        {applying ? "Applying…" : "Use this team"}
+        {applying ? <ThinkingDots className="text-tide" /> : "Use this team"}
       </button>
     </div>
   );

@@ -11,6 +11,7 @@ from backend.backtester.engine import (
     BacktestEngine,
     BacktestRequest,
     CandidateEvaluation,
+    _build_price_download_warnings,
     _target_weights_from_decisions,
 )
 from backend.backtester.universe import (
@@ -185,7 +186,7 @@ async def test_run_backtest_returns_team_runs_and_decision_events(monkeypatch, t
 
 
 @pytest.mark.asyncio
-async def test_experimental_replay_executes_only_honored_agents(monkeypatch, tmp_path):
+async def test_experimental_replay_executes_degraded_agents_with_penalties(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "artifacts_dir", tmp_path / "artifacts")
     monkeypatch.setattr(settings, "db_path", tmp_path / "finpilot-honored-only.db")
     await init_db()
@@ -218,10 +219,11 @@ async def test_experimental_replay_executes_only_honored_agents(monkeypatch, tmp
             "technicals",
             "momentum",
             "macro",
+            "sentiment",
             "risk_manager",
             "portfolio_manager",
         ]
-        assert "sentiment" not in execution_snapshot.effective_team.compiled_agent_specs
+        assert "sentiment" in execution_snapshot.effective_team.compiled_agent_specs
         signal = AgentSignal(
             ticker=ticker,
             agent_name="technicals",
@@ -276,8 +278,10 @@ async def test_experimental_replay_executes_only_honored_agents(monkeypatch, tmp
         execution_snapshots=[snapshot],
     )
 
-    assert result.team_runs[0].supported_agents == ["macro", "momentum", "technicals"]
+    assert result.team_runs[0].supported_agents == ["technicals", "momentum", "macro", "sentiment"]
     assert {item.agent_name for item in result.team_runs[0].degraded_agents} == {"sentiment"}
+    assert result.team_runs[0].effective_signature is not None
+    assert result.team_runs[0].effective_signature.effective_weights["sentiment"] == 17.5
 
 
 @pytest.mark.asyncio
@@ -320,8 +324,7 @@ def test_historical_equivalence_warning_flags_degraded_only_difference():
     warnings = build_equivalence_warnings(list(profiles.values()))
 
     assert report.warnings
-    assert warnings
-    assert "same fully supported historical signature" in warnings[0]
+    assert not warnings
 
 
 @pytest.mark.asyncio
@@ -573,6 +576,19 @@ def test_normalize_ticker_drops_non_common_symbols_and_applies_aliases():
     assert _normalize_ticker("BRK.B") == "BRK-B"
     assert _normalize_ticker("2483490D") == ""
     assert _normalize_ticker("AMTM-W") == ""
+
+
+def test_price_download_warning_surfaces_missing_universe_symbols():
+    warnings = _build_price_download_warnings(
+        requested_symbols=["AAPL", "ATVI", "MMC", "SPY", "TLT", "^VIX"],
+        available_symbols=["AAPL", "SPY", "TLT", "^VIX"],
+        benchmark_symbol="SPY",
+    )
+
+    assert warnings
+    assert "ATVI" in warnings[0]
+    assert "MMC" in warnings[0]
+    assert "excluded from the backtest shortlist/simulation" in warnings[0]
 
 
 @pytest.mark.asyncio

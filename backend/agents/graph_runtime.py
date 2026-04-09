@@ -135,35 +135,6 @@ async def run_graph_pipeline(
                 budget=budget,
             )
             all_signals.extend(result.signals)
-        elif is_terminal and not has_system_prompt:
-            # Terminal node with no system_prompt → use standard decision logic
-            result = await _run_terminal_fallback(
-                ticker=ticker,
-                node=node,
-                upstream_results=upstream_results,
-                runtime_settings=runtime_settings,
-                agent_weights=team.agent_weights,
-                execution_snapshot=execution_snapshot,
-                budget=budget,
-            )
-            final_bull = result.bull_case or final_bull
-            final_bear = result.bear_case or final_bear
-            final_decision = result.decision or final_decision
-        elif has_system_prompt or node.node_family in ("reasoning", "output") or node_id in team.compiled_reasoning_specs:
-            # Custom reasoning node — run LLM with system_prompt and upstream context
-            result = await _run_reasoning_node(
-                ticker=ticker,
-                node=node,
-                upstream_results=upstream_results,
-                runtime_settings=runtime_settings,
-                execution_snapshot=execution_snapshot,
-                budget=budget,
-            )
-            all_signals.extend(result.signals)
-            if result.decision:
-                final_decision = result.decision
-            final_bull = result.bull_case or final_bull
-            final_bear = result.bear_case or final_bear
         elif node.node_family == "data_preparation":
             result = _run_data_preparation_node(upstream_results)
         elif node.node_family == "synthesis":
@@ -179,6 +150,46 @@ async def run_graph_pipeline(
                 blocked_nodes.update(_descendants(node_id, edges_by_source))
         elif node.node_family == "risk":
             result = _run_risk_node(node, upstream_results, runtime_settings)
+        elif node.node_family == "decision" and not has_system_prompt:
+            result = _run_decision_node(
+                ticker=ticker,
+                node=node,
+                upstream_results=upstream_results,
+                runtime_settings=runtime_settings,
+                team_weights=team.agent_weights,
+            )
+            final_bull = result.bull_case or final_bull
+            final_bear = result.bear_case or final_bear
+            final_decision = result.decision or final_decision
+        elif has_system_prompt or node.node_family in ("reasoning", "output"):
+            # Custom reasoning node — run LLM with system_prompt and upstream context
+            result = await _run_reasoning_node(
+                ticker=ticker,
+                node=node,
+                upstream_results=upstream_results,
+                runtime_settings=runtime_settings,
+                execution_snapshot=execution_snapshot,
+                budget=budget,
+            )
+            all_signals.extend(result.signals)
+            if result.decision:
+                final_decision = result.decision
+            final_bull = result.bull_case or final_bull
+            final_bear = result.bear_case or final_bear
+        elif is_terminal:
+            # Output/terminal nodes with no custom prompt use the deterministic fallback.
+            result = await _run_terminal_fallback(
+                ticker=ticker,
+                node=node,
+                upstream_results=upstream_results,
+                runtime_settings=runtime_settings,
+                agent_weights=team.agent_weights,
+                execution_snapshot=execution_snapshot,
+                budget=budget,
+            )
+            final_bull = result.bull_case or final_bull
+            final_bear = result.bear_case or final_bear
+            final_decision = result.decision or final_decision
         else:
             result = GraphNodeResult()
 

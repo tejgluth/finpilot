@@ -21,6 +21,8 @@ export interface DataSourceSettings {
   use_yfinance: boolean;
   use_fred: boolean;
   use_edgar: boolean;
+  use_sec_companyfacts: boolean;
+  use_gdelt: boolean;
   use_coingecko: boolean;
   use_finnhub: boolean;
   use_marketaux: boolean;
@@ -563,6 +565,48 @@ export interface TeamBacktestRun {
   warnings: string[];
   effective_signature: HistoricalEffectiveSignature | null;
   cache_usage: CacheUsageSummary;
+}
+
+export interface BacktestLiveHolding {
+  ticker: string;
+  shares: number;
+  price: number;
+  market_value: number;
+  weight_pct: number;
+}
+
+export interface BacktestLiveTrade {
+  timestamp: string;
+  ticker: string;
+  action: "BUY" | "SELL";
+  fill_price: number;
+  notional_usd: number;
+  cost_usd: number;
+  previous_weight_pct: number;
+  weight_pct: number;
+  team_id: string;
+  team_name: string;
+  version_number: number;
+  score: number;
+  reason: string;
+}
+
+export interface BacktestLiveTeamUpdate {
+  team_id: string;
+  team_name: string;
+  version_number: number;
+  timestamp: string;
+  strategy_equity: number;
+  benchmark_equity: number;
+  cash: number;
+  gross_exposure_pct: number;
+  holdings_count: number;
+  holdings: BacktestLiveHolding[];
+  recent_trades: BacktestLiveTrade[];
+  processed_days: number;
+  total_days: number;
+  processed_rebalances: number;
+  total_rebalances: number;
 }
 
 export interface HistoricalGap {

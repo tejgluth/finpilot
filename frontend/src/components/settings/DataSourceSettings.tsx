@@ -5,6 +5,8 @@ const fields: SettingsFieldConfig[] = [
   { key: "use_yfinance", label: "Use yfinance", description: "Core free market data.", type: "boolean" },
   { key: "use_fred", label: "Use FRED", description: "Macro series and rates data.", type: "boolean" },
   { key: "use_edgar", label: "Use SEC EDGAR", description: "Filing text and reporting history.", type: "boolean" },
+  { key: "use_sec_companyfacts", label: "Use SEC CompanyFacts", description: "Free point-in-time XBRL fundamentals from SEC filings.", type: "boolean" },
+  { key: "use_gdelt", label: "Use GDELT", description: "Free historical news archive for replay-safe sentiment.", type: "boolean" },
   { key: "use_coingecko", label: "Use CoinGecko", description: "Crypto pricing coverage.", type: "boolean" },
   { key: "use_alpaca_data", label: "Use Alpaca market data", description: "Requires Alpaca credentials.", type: "boolean" },
   { key: "use_finnhub", label: "Use Finnhub", description: "News and sentiment coverage.", type: "boolean" },

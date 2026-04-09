@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from backend.agents.base_agent import BaseAnalysisAgent, FetchedData
+from backend.data.adapters import EdgarAdapter, FmpAdapter, SecCompanyFactsAdapter, YFinanceAdapter
 from backend.models.agent_team import CompiledAgentSpec, ExecutionSnapshot
-from backend.data.adapters import EdgarAdapter, FmpAdapter, YFinanceAdapter
 from backend.settings.user_settings import DataSourceSettings
 
 
@@ -34,19 +34,41 @@ class FundamentalsAgent(BaseAnalysisAgent):
     ) -> FetchedData:
         data = FetchedData(ticker=ticker.upper())
         as_of = execution_snapshot.data_boundary.as_of_datetime
-        point_in_time_required = execution_snapshot.strict_temporal_mode
+        historical_replay = as_of is not None
         allowed_sources = set(compiled_spec.owned_sources)
-        if data_settings.use_yfinance and "yfinance" in allowed_sources:
+        if data_settings.use_sec_companyfacts and "sec_companyfacts" in allowed_sources:
+            snapshot = await SecCompanyFactsAdapter().get_company_snapshot(ticker, as_of_datetime=as_of)
+            for field_name in (
+                "pe_ratio",
+                "pb_ratio",
+                "ev_ebitda",
+                "gross_margin",
+                "operating_margin",
+                "net_margin",
+                "roe",
+                "roa",
+                "debt_to_equity",
+                "current_ratio",
+            ):
+                if snapshot.get(field_name) is None:
+                    continue
+                data.fields[field_name] = snapshot[field_name]
+                data.field_sources[field_name] = "sec_companyfacts"
+                data.field_ages[field_name] = 1440.0
+        elif historical_replay:
+            data.failed_sources.append("sec_companyfacts")
+
+        if data_settings.use_yfinance and "yfinance" in allowed_sources and not historical_replay:
             fundamentals = await YFinanceAdapter().get_fundamentals(
                 ticker,
                 as_of_datetime=as_of,
-                point_in_time_required=point_in_time_required,
+                point_in_time_required=False,
             )
             for field_name, value in fundamentals.items():
                 data.fields[field_name] = value
                 data.field_sources[field_name] = "yfinance"
                 data.field_ages[field_name] = 15.0
-        else:
+        elif not historical_replay:
             data.failed_sources.append("yfinance")
 
         if data_settings.use_edgar and "edgar" in allowed_sources:

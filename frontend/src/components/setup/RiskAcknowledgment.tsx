@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../../api/client";
 import Panel from "../common/Panel";
 import StatusBadge from "../common/StatusBadge";
+import ThinkingDots from "../common/ThinkingDots";
 
 export const RISK_ACKNOWLEDGMENT_ITEMS = [
   { id: "not_advice", text: "I understand that FinPilot is a research tool, not investment advice, and is not regulated by any financial authority." },
@@ -65,7 +66,7 @@ export default function RiskAcknowledgment({
         disabled={accepted.length !== 9 || saving}
         onClick={() => void submit()}
       >
-        {saving ? "Recording…" : "Record acknowledgment"}
+        {saving ? <ThinkingDots className="text-white" /> : "Record acknowledgment"}
       </button>
       {!canContinue ? (
         <p className="mt-3 text-sm text-ink/65">
