@@ -45,7 +45,7 @@ DEFAULT_TEAM_LABEL = "Default Balanced Core"
 CONVERSATIONS_KEY = "strategy_conversations_v2"
 TEAMS_KEY = "strategy_team_versions_v2"
 ACTIVE_TEAM_KEY = "strategy_active_team_v2"
-STRATEGY_BUILDER_TIMEOUT_SECONDS = 8.0
+STRATEGY_BUILDER_TIMEOUT_SECONDS = 24.0
 
 
 def _now_iso() -> str:

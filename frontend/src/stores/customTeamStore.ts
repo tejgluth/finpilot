@@ -34,6 +34,18 @@ function formatCustomTeamError(err: unknown, action: "start" | "send" | "compile
   return message;
 }
 
+function hasConversationContent(conversation: CustomConversation | null): boolean {
+  if (!conversation) {
+    return false;
+  }
+
+  return Boolean(
+    conversation.messages.length ||
+      conversation.latest_draft ||
+      conversation.latest_turn?.assistant_message?.trim(),
+  );
+}
+
 interface CustomTeamState {
   conversation: CustomConversation | null;
   draft: ArchitectureDraft | null;
@@ -117,7 +129,7 @@ export const useCustomTeamStore = create<CustomTeamStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { conversations } = await api.customTeam.listConversations();
-      const latest = conversations[0] ?? null;
+      const latest = conversations.find((conversation) => hasConversationContent(conversation)) ?? null;
       if (latest) {
         set({
           conversation: latest,
@@ -141,9 +153,18 @@ export const useCustomTeamStore = create<CustomTeamStore>((set, get) => ({
   },
 
   startConversation: async (seedPrompt?: string) => {
+    const normalizedPrompt = seedPrompt?.trim();
+    if (!normalizedPrompt) {
+      set({
+        loading: false,
+        error: "Describe the team you want to build before starting the custom builder.",
+      });
+      return false;
+    }
+
     set({ loading: true, error: null });
     try {
-      const conv = await api.customTeam.startConversation(seedPrompt);
+      const conv = await api.customTeam.startConversation(normalizedPrompt);
       set({
         conversation: conv,
         draft: conv.latest_draft,

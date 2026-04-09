@@ -100,10 +100,17 @@ async def start_custom_conversation(
     payload: StartCustomConversationRequest,
     settings: UserSettings = Depends(_get_settings),
 ) -> CustomConversation:
-    conv = await create_custom_conversation(settings, seed_prompt=payload.seed_prompt)
+    seed_prompt = (payload.seed_prompt or "").strip()
+    if not seed_prompt:
+        raise HTTPException(
+            status_code=400,
+            detail="Describe the team you want to build before starting the custom builder.",
+        )
+
+    conv = await create_custom_conversation(settings, seed_prompt=seed_prompt)
     AuditLogger.log("user", "custom_conversation_started", {
         "conversation_id": conv.conversation_id,
-        "has_seed_prompt": bool(payload.seed_prompt),
+        "has_seed_prompt": True,
     })
     return conv
 

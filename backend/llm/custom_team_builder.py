@@ -47,7 +47,7 @@ from backend.security.output_validator import parse_llm_json
 from backend.settings.user_settings import UserSettings, default_user_settings
 
 CUSTOM_CONVERSATIONS_KEY = "custom_team_conversations_v1"
-CUSTOM_BUILDER_TIMEOUT = 60.0  # Custom topology responses are large; 8s (strategy default) is too short
+CUSTOM_BUILDER_TIMEOUT = 180.0  # Custom topology responses are large; slower local models need more headroom
 
 # Default weights for agents when building heuristic topology
 _DEFAULT_WEIGHTS: dict[str, int] = {

@@ -1,11 +1,11 @@
 import type { VisualizationModel, VisualizationNode } from "./types";
 
-// Column x-positions (px from left). Cards are 270px wide; 360px columns give
-// 90px gutter between columns which accommodates the arrow heads.
-const COLUMN_X = [0, 360, 720] as const;
+// Column x-positions (px from left). Cards are 240px wide; 340px columns give
+// 100px gutter between columns which accommodates the arrow heads.
+const COLUMN_X = [0, 340, 680] as const;
 
-const NODE_HEIGHT = 160; // estimated rendered card height in px
-const NODE_GAP = 16;     // vertical gap between cards in the analysis column
+const NODE_HEIGHT = 132; // estimated rendered card height in px
+const NODE_GAP = 8;      // vertical gap between cards in the analysis column
 
 /** Returns the y-coordinate for a node at index i out of total nodes, centered on Y=0. */
 function centeredY(index: number, total: number): number {
@@ -68,7 +68,7 @@ export function applyLayout(model: VisualizationModel): VisualizationModel {
 export function modelBounds(model: VisualizationModel): { width: number; height: number } {
   const analysisCount = model.nodes.filter((n) => n.role === "analysis").length;
   return {
-    width: COLUMN_X[2] + 280,
+    width: COLUMN_X[2] + 240,
     height: Math.max(
       analysisCount * (NODE_HEIGHT + NODE_GAP) + NODE_GAP,
       NODE_HEIGHT * 2,

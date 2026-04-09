@@ -1,6 +1,11 @@
 import type { GuardrailConfig } from "../../api/types";
 import Panel from "../common/Panel";
 
+function formatValue(value: number | boolean): string {
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  return String(value);
+}
+
 export default function GuardrailSettings({ guardrails }: { guardrails: GuardrailConfig }) {
   const rows: Array<[string, number | boolean]> = [
     ["Max position %", guardrails.max_position_pct],
@@ -14,12 +19,12 @@ export default function GuardrailSettings({ guardrails }: { guardrails: Guardrai
     ["Trading hours only", guardrails.trading_hours_only],
   ];
   return (
-    <Panel title="Guardrail settings" eyebrow="Server-clamped">
-      <div className="grid gap-3 md:grid-cols-2">
+    <Panel title="Guardrail limits" eyebrow="Server-clamped">
+      <div className="grid gap-2.5 md:grid-cols-2">
         {rows.map(([label, value]) => (
-          <div key={label} className="rounded-2xl bg-slate px-4 py-3">
-            <div className="font-mono text-xs uppercase text-ink/50">{label}</div>
-            <div className="text-lg font-semibold">{String(value)}</div>
+          <div key={label} className="rounded-2xl bg-slate px-4 py-3.5">
+            <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.15em] text-ink/45">{label}</div>
+            <div className="text-xl font-semibold leading-none text-ink">{formatValue(value)}</div>
           </div>
         ))}
       </div>

@@ -58,9 +58,8 @@ export default function TeamVisualizationView({
       <TeamSummaryPanel model={model} teamName={team.name} teamSelector={teamSelector} />
 
       {/* Hint bar */}
-      <p className="text-xs text-ink/45">
-        This map shows how your team analyzes and routes signals — click any agent to
-        learn more.
+      <p className="text-[11px] text-ink/40">
+        Click any agent to see its configuration, data sources, and prompt variant.
       </p>
 
       {/* Graph */}

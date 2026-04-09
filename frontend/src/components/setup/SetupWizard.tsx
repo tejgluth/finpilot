@@ -33,28 +33,28 @@ export default function SetupWizard({ focusService }: { focusService?: string | 
       <DataSourceStep dataSources={status.user_settings.data_sources} />
       <PlanDetector plan={plan} />
       <div className="rounded-[28px] border border-white/70 bg-white/80 p-5 shadow-soft backdrop-blur-sm">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="font-mono text-[11px] uppercase tracking-[0.3em] text-tide/70">
+            <div className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.3em] text-tide/60">
               Next step
             </div>
-            <h3 className="font-display text-xl text-ink">Move into Strategy when you&apos;re ready</h3>
-            <p className="mt-1 text-sm leading-6 text-ink/70">
-              Paper-first defaults and live-trading guardrails still apply later in the app, so setup can stay focused on your local configuration.
+            <h3 className="font-display text-xl text-ink">Head to Strategy when you&apos;re ready</h3>
+            <p className="mt-1 text-sm leading-relaxed text-ink/65">
+              Paper mode stays on by default throughout the app. You can always come back here to add more data sources later.
             </p>
           </div>
           <button
-            className="rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="shrink-0 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white transition hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={!status.has_ai_provider}
             onClick={() => navigate("/strategy")}
             type="button"
           >
-            Open Strategy
+            Open Strategy →
           </button>
         </div>
         {!status.has_ai_provider ? (
-          <p className="mt-3 text-sm text-ink/60">
-            Save one AI provider first, then Strategy opens with the rest of the safe defaults intact.
+          <p className="mt-3 text-[12px] text-ink/55">
+            Save an AI provider above to continue.
           </p>
         ) : null}
       </div>

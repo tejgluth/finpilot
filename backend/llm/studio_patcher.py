@@ -342,7 +342,7 @@ async def generate_patch_from_nl(
         requires_recompile: bool = True
 
     try:
-        async with asyncio.timeout(120.0):
+        async with asyncio.timeout(360.0):
             raw = await client.chat(
                 system=system,
                 messages=[{"role": "user", "content": user_payload}],
@@ -381,7 +381,7 @@ async def generate_patch_from_nl(
             "previous_patch": patch.model_dump(mode="json"),
             "validation_errors": preview_validation.errors,
         }, indent=2)
-        async with asyncio.timeout(120.0):
+        async with asyncio.timeout(360.0):
             repair_raw = await client.chat(
                 system=repair_system,
                 messages=[{"role": "user", "content": repair_payload}],

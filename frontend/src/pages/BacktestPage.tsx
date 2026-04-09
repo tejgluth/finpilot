@@ -33,24 +33,30 @@ export default function BacktestPage() {
             </div>
           ) : null}
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-[24px] bg-white/80 px-4 py-4 text-sm text-ink/70">
-              <div className="font-semibold text-ink">Historical diagnostics</div>
-              <p className="mt-2">
-                Mode: {result.fidelity_mode} · Cache: {result.cache_policy} · Universe source: {result.universe_resolution_report.source}
+            <div className="rounded-[24px] border border-ink/[0.07] bg-white/80 px-5 py-4 text-sm text-ink/70">
+              <div className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-ink/35">
+                Run configuration
+              </div>
+              <div className="font-semibold text-ink mb-2">Historical diagnostics</div>
+              <p className="text-[12px] leading-relaxed">
+                Mode: <span className="text-ink font-medium">{result.fidelity_mode}</span> · Cache: <span className="text-ink font-medium">{result.cache_policy}</span> · Universe: <span className="text-ink font-medium">{result.universe_resolution_report.source}</span>
               </p>
-              <p className="mt-2">
-                Construction: {String(result.portfolio_construction.weighting_mode ?? "-")} · top {result.top_n_holdings} · candidate pool {String(result.portfolio_construction.candidate_pool_size ?? result.shortlist_size)}
+              <p className="mt-1.5 text-[12px] leading-relaxed">
+                Weighting: <span className="text-ink font-medium">{String(result.portfolio_construction.weighting_mode ?? "—")}</span> · Top {result.top_n_holdings} holdings · Pool of {String(result.portfolio_construction.candidate_pool_size ?? result.shortlist_size)}
               </p>
               {result.historical_gap_report.warnings.length ? (
-                <p className="mt-2 text-ember">{result.historical_gap_report.warnings.join(" ")}</p>
+                <p className="mt-2 text-[12px] text-ember">{result.historical_gap_report.warnings.join(" ")}</p>
               ) : null}
             </div>
-            <div className="rounded-[24px] bg-white/80 px-4 py-4 text-sm text-ink/70">
-              <div className="font-semibold text-ink">Why teams may look similar</div>
-              <p className="mt-2">
+            <div className="rounded-[24px] border border-ink/[0.07] bg-white/80 px-5 py-4 text-sm text-ink/70">
+              <div className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.25em] text-ink/35">
+                Equivalence check
+              </div>
+              <div className="font-semibold text-ink mb-2">Team signal overlap</div>
+              <p className="text-[12px] leading-relaxed">
                 {result.team_equivalence_warnings.length
                   ? result.team_equivalence_warnings.join(" ")
-                  : "No historical equivalence warning was triggered for this comparison."}
+                  : "No significant overlap detected between the teams in this run."}
               </p>
             </div>
           </div>

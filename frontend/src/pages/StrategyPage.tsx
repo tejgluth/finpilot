@@ -16,13 +16,12 @@ import type { CapabilityGap } from "../api/types";
 import { useCustomTeamStore } from "../stores/customTeamStore";
 import { useStrategyStore } from "../stores/strategyStore";
 
-type Tab = "build" | "visualize" | "compare" | "custom";
+type Tab = "build" | "visualize" | "custom";
 type CustomVisualizationMode = "custom" | "saved";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "build", label: "Build" },
   { id: "visualize", label: "Visualize" },
-  { id: "compare", label: "Compare" },
   { id: "custom", label: "Custom Team" },
 ];
 
@@ -178,6 +177,12 @@ export default function StrategyPage() {
   }
 
   const latestTurn = customConversation?.latest_turn;
+  const hasStartedCustomConversation = Boolean(
+    customConversation &&
+      (customConversation.messages.length ||
+        customDraft ||
+        latestTurn?.assistant_message?.trim()),
+  );
   const hasCustomTopology = Boolean(customDraft?.topology?.nodes?.length);
   const hasCustomVisualization = hasCustomTopology || Boolean(customCompiledTeam);
   const customVisualizationLabel =
@@ -251,11 +256,11 @@ export default function StrategyPage() {
                 />
                 <div className="flex justify-end">
                   <button
-                    className="rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white"
+                    className="rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-ink/85"
                     onClick={() => void saveDraft(`${compiledTeam.name} Version`)}
                     type="button"
                   >
-                    Save immutable version
+                    Save as team version
                   </button>
                 </div>
               </div>
@@ -311,29 +316,6 @@ export default function StrategyPage() {
         )}
       </div>
 
-      {/* Compare panel */}
-      <div
-        aria-labelledby="tab-compare"
-        hidden={activeTab !== "compare"}
-        id="panel-compare"
-        role="tabpanel"
-      >
-        {compiledTeam ? (
-          <TeamVisualizationView
-            comparison={comparison}
-            isVisible={activeTab === "compare"}
-            showComparison={true}
-            team={compiledTeam}
-          />
-        ) : (
-          <EmptyState
-            actionLabel="Go to Build"
-            message="Compile a draft team to compare against the default baseline."
-            onAction={() => setActiveTab("build")}
-          />
-        )}
-      </div>
-
       {/* Custom Team panel */}
       <div
         aria-labelledby="tab-custom"
@@ -341,18 +323,17 @@ export default function StrategyPage() {
         id="panel-custom"
         role="tabpanel"
       >
-        {!customConversation ? (
+        {!hasStartedCustomConversation ? (
           // No conversation yet — seed prompt
           <div className="rounded-[28px] border border-white/70 bg-white/80 p-8 shadow-soft backdrop-blur-sm">
-            <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-ink/40">
-              Custom Team Builder
+            <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.3em] text-tide/60">
+              Custom team builder
             </p>
-            <h2 className="mb-2 font-display text-xl font-semibold text-ink">
+            <h2 className="mb-2 font-display text-xl text-ink">
               Design your own agent team
             </h2>
             <p className="mb-6 text-sm leading-relaxed text-ink/60">
-              Describe the team you want to build — which analysis signals to include, your risk
-              tolerance, time horizon, and any sectors to avoid.
+              Tell the builder what you want — which signals matter, sectors to avoid, your risk tolerance and time horizon. It will propose a topology and compile a validated team.
             </p>
 
             {customError && (

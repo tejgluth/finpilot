@@ -12,6 +12,11 @@ if TYPE_CHECKING:  # pragma: no cover
     from backend.settings.user_settings import LlmSettings
 
 
+MODEL_TIMEOUT_MULTIPLIER = 3.0
+HOSTED_LLM_HTTP_TIMEOUT_SECONDS = 45.0 * MODEL_TIMEOUT_MULTIPLIER
+OLLAMA_HTTP_TIMEOUT_SECONDS = 90.0 * MODEL_TIMEOUT_MULTIPLIER
+
+
 def _default_model(provider_name: str, llm_settings: "LlmSettings | None") -> str:
     if llm_settings and llm_settings.model:
         return llm_settings.model
@@ -108,7 +113,7 @@ class LLMClient:
             "Authorization": f"Bearer {env_settings.openai_api_key}",
             "Content-Type": "application/json",
         }
-        async with httpx.AsyncClient(timeout=45.0) as client:
+        async with httpx.AsyncClient(timeout=HOSTED_LLM_HTTP_TIMEOUT_SECONDS) as client:
             response = await client.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
             response.raise_for_status()
         data = response.json()
@@ -133,7 +138,7 @@ class LLMClient:
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         }
-        async with httpx.AsyncClient(timeout=45.0) as client:
+        async with httpx.AsyncClient(timeout=HOSTED_LLM_HTTP_TIMEOUT_SECONDS) as client:
             response = await client.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload)
             response.raise_for_status()
         data = response.json()
@@ -164,7 +169,7 @@ class LLMClient:
             f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
             f"?key={env_settings.google_api_key}"
         )
-        async with httpx.AsyncClient(timeout=45.0) as client:
+        async with httpx.AsyncClient(timeout=HOSTED_LLM_HTTP_TIMEOUT_SECONDS) as client:
             response = await client.post(url, json=payload)
             response.raise_for_status()
         data = response.json()
@@ -246,7 +251,7 @@ class LLMClient:
         openai_payload_compat = dict(openai_payload)
         openai_payload_compat.pop("response_format", None)
 
-        async with httpx.AsyncClient(timeout=90.0) as client:
+        async with httpx.AsyncClient(timeout=OLLAMA_HTTP_TIMEOUT_SECONDS) as client:
             # 1) Prefer /api/chat (best structured behavior).
             response = await client.post(chat_url, json=chat_payload)
 

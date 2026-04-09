@@ -15,7 +15,7 @@ import InfluenceEdge from "./InfluenceEdge";
 
 const NODE_TYPES = { agentNode: AgentNode } as const;
 const EDGE_TYPES = { influenceEdge: InfluenceEdge } as const;
-const FIT_VIEW_OPTIONS = { padding: 0.2, duration: 350, minZoom: 0.12 } as const;
+const FIT_VIEW_OPTIONS = { padding: 0.1, duration: 400, minZoom: 0.08 } as const;
 
 interface Props {
   model: VisualizationModel;
@@ -99,8 +99,8 @@ export default function TeamVisualizationGraph({
 }: Props) {
   return (
     <div
-      className="relative w-full overflow-hidden rounded-[24px] border border-ink/8 bg-mist"
-      style={{ height: 560 }}
+      className="relative w-full overflow-hidden rounded-[24px] border border-ink/[0.07] bg-[#f9f6f0]"
+      style={{ height: 700 }}
     >
       <ReactFlow
         aria-label="Agent team topology"
@@ -109,7 +109,7 @@ export default function TeamVisualizationGraph({
         defaultNodes={toRfNodes(model, onNodeSelect)}
         edgeTypes={EDGE_TYPES}
         fitViewOptions={FIT_VIEW_OPTIONS}
-        minZoom={0.12}
+        minZoom={0.08}
         nodesDraggable={false}
         nodeTypes={NODE_TYPES}
         nodesConnectable={false}
@@ -120,13 +120,12 @@ export default function TeamVisualizationGraph({
       >
         <Background
           color="#14202b"
-          gap={28}
-          style={{ opacity: 0.04 }}
+          gap={32}
+          style={{ opacity: 0.03 }}
           variant={BackgroundVariant.Dots}
         />
-        <Controls aria-label="Graph controls" showFitView={false} showInteractive={false} />
+        <Controls aria-label="Graph controls" showFitView showInteractive={false} />
         <GraphLegend />
-        {/* Syncs node/edge state whenever the model changes after initial mount */}
         <ModelSyncer isVisible={isVisible} model={model} onNodeSelect={onNodeSelect} />
       </ReactFlow>
     </div>

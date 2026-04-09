@@ -34,35 +34,38 @@ export default function StrategyChat({
       }
     >
       <div className="space-y-3">
-        <div className="max-h-[420px] overflow-y-auto rounded-[24px] bg-slate/70 p-4">
+        <div className="max-h-[420px] overflow-y-auto rounded-[24px] bg-slate/60 p-4">
           <div className="space-y-3">
             {deferredMessages.length ? (
               <>
                 {deferredMessages.map((message) => (
                   <div
-                    className={`max-w-[90%] rounded-[22px] px-4 py-3 text-sm ${
+                    className={[
+                      "max-w-[90%] rounded-[20px] px-4 py-3 text-sm",
                       message.role === "user"
                         ? "ml-auto bg-tide text-white"
-                        : "bg-white text-ink shadow-soft"
-                    }`}
+                        : "bg-white text-ink shadow-sm",
+                    ].join(" ")}
                     key={message.message_id}
                   >
-                    <div className="mb-1 text-[10px] font-mono uppercase tracking-[0.3em] opacity-70">
-                      {message.role} / {message.message_type}
+                    <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.25em] opacity-50">
+                      {message.role === "user" ? "You" : "Builder"}
+                      {" / "}
+                      {message.message_type}
                     </div>
                     <div>{message.content}</div>
                   </div>
                 ))}
                 {loading && (
-                  <div className="max-w-[90%] rounded-[22px] bg-white px-4 py-3 text-ink shadow-soft">
+                  <div className="max-w-[90%] rounded-[20px] bg-white px-4 py-3 text-ink shadow-sm">
                     <ThinkingDots />
                   </div>
                 )}
               </>
             ) : (
-              <p className="text-sm text-ink/60">
-                Start with a concrete request such as “Build a short-term semiconductor breakout team with sentiment
-                secondary and avoid financials.”
+              <p className="text-sm leading-relaxed text-ink/55">
+                Describe the team you want. For example: short-term semiconductor
+                breakout team with momentum secondary, avoid financials.
               </p>
             )}
           </div>
@@ -79,14 +82,14 @@ export default function StrategyChat({
           }}
         >
           <textarea
-            className="min-h-32 w-full rounded-[22px] border border-ink/10 bg-white px-4 py-3 text-base outline-none transition focus:border-tide"
+            className="min-h-28 w-full rounded-[20px] border border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-tide/60 focus:ring-2 focus:ring-tide/10"
             onChange={(event) => setPrompt(event.target.value)}
-            placeholder="Describe the team you want, what to emphasize, what to avoid, and any investor styles to imitate."
+            placeholder="Describe your team — signals to emphasize, sectors to avoid, risk tolerance, and time horizon."
             value={prompt}
           />
           <div className="flex items-center justify-between gap-3">
-            <div className="text-xs text-ink/55">
-              Multi-turn state is persisted locally. The builder only uses the trusted executable catalog.
+            <div className="text-[11px] leading-relaxed text-ink/45">
+              Conversation is saved locally. Only agents from the trusted catalog are used.
             </div>
             <button
               className="rounded-full bg-tide px-5 py-3 text-sm font-semibold text-white"
@@ -98,7 +101,11 @@ export default function StrategyChat({
           </div>
         </form>
 
-        {error ? <div className="rounded-2xl bg-ember/10 px-4 py-3 text-sm text-ember">{error}</div> : null}
+        {error ? (
+          <div className="rounded-2xl bg-ember/10 px-4 py-3 text-sm text-ember">
+            {error}
+          </div>
+        ) : null}
       </div>
     </Panel>
   );

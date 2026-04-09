@@ -17,14 +17,18 @@ export default function Panel({ title, eyebrow, action, className, children }: P
       )}
     >
       {(title || eyebrow || action) && (
-        <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             {eyebrow ? (
-              <div className="font-mono text-[11px] uppercase tracking-[0.3em] text-tide/70">{eyebrow}</div>
+              <div className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.35em] text-tide/60">
+                {eyebrow}
+              </div>
             ) : null}
-            {title ? <h3 className="font-display text-xl text-ink">{title}</h3> : null}
+            {title ? (
+              <h3 className="font-display text-xl leading-tight text-ink">{title}</h3>
+            ) : null}
           </div>
-          {action}
+          {action ? <div className="shrink-0">{action}</div> : null}
         </div>
       )}
       {children}
