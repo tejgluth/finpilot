@@ -27,6 +27,7 @@ interface SettingsSectionEditorProps {
   eyebrow: string;
   note?: string;
   sectionKey: string;
+  highlightKey?: string | null;
   values: Record<string, SettingsValue>;
   fields: SettingsFieldConfig[];
   saving: boolean;
@@ -49,6 +50,7 @@ export default function SettingsSectionEditor({
   eyebrow,
   note,
   sectionKey,
+  highlightKey,
   values,
   fields,
   saving,
@@ -62,6 +64,17 @@ export default function SettingsSectionEditor({
   useEffect(() => {
     setDraft(fieldsToDraft(values, fields));
   }, [values, fields]);
+
+  useEffect(() => {
+    if (!highlightKey) {
+      return;
+    }
+
+    const element = document.getElementById(`settings-field-${sectionKey}-${highlightKey}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightKey, sectionKey]);
 
   const dirty = useMemo(
     () => fields.some((field) => draft[field.key] !== values[field.key]),
@@ -101,9 +114,16 @@ export default function SettingsSectionEditor({
       <div className="grid gap-4 md:grid-cols-2">
         {fields.map((field) => {
           const value = draft[field.key];
+          const isHighlighted = highlightKey === field.key;
 
           return (
-            <label key={field.key} className="grid gap-2 rounded-[24px] bg-slate px-4 py-4">
+            <label
+              key={field.key}
+              className={`grid gap-2 rounded-[24px] px-4 py-4 ${
+                isHighlighted ? "bg-tide/8 ring-2 ring-tide/20" : "bg-slate"
+              }`}
+              id={`settings-field-${sectionKey}-${field.key}`}
+            >
               <div className="space-y-1">
                 <div className="font-semibold text-ink">{field.label}</div>
                 {field.description ? <div className="text-sm leading-5 text-ink/60">{field.description}</div> : null}

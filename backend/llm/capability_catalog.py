@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from backend.config import settings as env_settings
 from backend.models.agent_team import CapabilityBinding, CapabilityGap
 from backend.settings.user_settings import UserSettings
 
@@ -160,12 +161,17 @@ def _source_configured(source_id: str, settings: UserSettings) -> bool:
         "fred": settings.data_sources.use_fred,
         "edgar": settings.data_sources.use_edgar,
         "coingecko": settings.data_sources.use_coingecko,
-        "finnhub": settings.data_sources.use_finnhub,
-        "marketaux": settings.data_sources.use_marketaux,
-        "fmp": settings.data_sources.use_fmp,
-        "reddit": settings.data_sources.use_reddit,
-        "alpaca_data": settings.data_sources.use_alpaca_data,
-        "polygon": settings.data_sources.use_polygon,
+        "finnhub": settings.data_sources.use_finnhub and bool(env_settings.finnhub_api_key),
+        "marketaux": settings.data_sources.use_marketaux and bool(env_settings.marketaux_api_key),
+        "fmp": settings.data_sources.use_fmp and bool(env_settings.fmp_api_key),
+        "reddit": (
+            settings.data_sources.use_reddit
+            and bool(env_settings.reddit_client_id)
+            and bool(env_settings.reddit_client_secret)
+            and bool(env_settings.reddit_user_agent)
+        ),
+        "alpaca_data": settings.data_sources.use_alpaca_data and env_settings.has_alpaca(),
+        "polygon": settings.data_sources.use_polygon and bool(env_settings.polygon_api_key),
     }.get(source_id, False)
 
 

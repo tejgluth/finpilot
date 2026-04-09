@@ -5,7 +5,17 @@ import pytest
 from backend.agents.analysis.fundamentals import FundamentalsAgent
 from backend.agents.analysis.sentiment import SentimentAgent
 from backend.config import settings
-from backend.data.adapters import EdgarAdapter, FmpAdapter, PolygonAdapter, SecCompanyFactsAdapter, YFinanceAdapter
+from backend.data.adapters import (
+    AlpacaDataAdapter,
+    EdgarAdapter,
+    FinnhubAdapter,
+    FmpAdapter,
+    MarketauxAdapter,
+    PolygonAdapter,
+    RedditAdapter,
+    SecCompanyFactsAdapter,
+    YFinanceAdapter,
+)
 from backend.llm.strategy_builder import default_compiled_team
 from backend.models.agent_team import DataBoundary, ExecutionSnapshot
 from backend.settings.user_settings import DataSourceSettings
@@ -16,6 +26,37 @@ async def test_fmp_adapter_returns_empty_without_api_key(monkeypatch):
     monkeypatch.setattr(settings, "fmp_api_key", "")
     payload = await FmpAdapter().get_earnings_snapshot("AAPL")
     assert payload == {}
+
+
+@pytest.mark.asyncio
+async def test_finnhub_adapter_returns_empty_without_api_key(monkeypatch):
+    monkeypatch.setattr(settings, "finnhub_api_key", "")
+    payload = await FinnhubAdapter().get_news_snapshot("AAPL")
+    assert payload == {}
+
+
+@pytest.mark.asyncio
+async def test_marketaux_adapter_returns_empty_without_api_key(monkeypatch):
+    monkeypatch.setattr(settings, "marketaux_api_key", "")
+    payload = await MarketauxAdapter().get_entity_sentiment("AAPL")
+    assert payload == {}
+
+
+@pytest.mark.asyncio
+async def test_reddit_adapter_returns_empty_without_credentials(monkeypatch):
+    monkeypatch.setattr(settings, "reddit_client_id", "")
+    monkeypatch.setattr(settings, "reddit_client_secret", "")
+    payload = await RedditAdapter().get_social_snapshot("AAPL")
+    assert payload == {}
+
+
+@pytest.mark.asyncio
+async def test_alpaca_data_adapter_returns_empty_without_credentials(monkeypatch):
+    monkeypatch.setattr(settings, "alpaca_api_key", "")
+    monkeypatch.setattr(settings, "alpaca_secret_key", "")
+    payload = await AlpacaDataAdapter().fetch("AAPL")
+    assert payload.payload == {}
+    assert payload.point_in_time_supported is False
 
 
 @pytest.mark.asyncio

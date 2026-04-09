@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import ThinkingDots from "../components/common/ThinkingDots";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import InlineTeamNameEditor from "../components/studio/InlineTeamNameEditor";
 import TeamClassificationBadge from "../components/studio/TeamClassificationBadge";
 import TeamStudio from "../components/studio/TeamStudio";
@@ -11,6 +12,7 @@ import StrategyChat from "../components/strategy/StrategyChat";
 import TeamSelectorDropdown from "../components/strategy/TeamSelectorDropdown";
 import TeamComparison from "../components/strategy/TeamComparison";
 import TeamVisualizationView from "../components/visualization/TeamVisualizationView";
+import type { CapabilityGap } from "../api/types";
 import { useCustomTeamStore } from "../stores/customTeamStore";
 import { useStrategyStore } from "../stores/strategyStore";
 
@@ -29,6 +31,62 @@ const SEED_SUGGESTIONS = [
   "Macro-driven conservative team, avoid growth stocks",
   "Balanced fundamentals + sentiment team for mid-cap equity",
 ];
+
+const SOURCE_SETTINGS_KEYS: Record<string, string> = {
+  yfinance: "use_yfinance",
+  fred: "use_fred",
+  edgar: "use_edgar",
+  sec_companyfacts: "use_sec_companyfacts",
+  gdelt: "use_gdelt",
+  coingecko: "use_coingecko",
+  finnhub: "use_finnhub",
+  marketaux: "use_marketaux",
+  fmp: "use_fmp",
+  reddit: "use_reddit",
+  alpaca_data: "use_alpaca_data",
+  polygon: "use_polygon",
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  yfinance: "yfinance",
+  fred: "FRED",
+  edgar: "EDGAR",
+  sec_companyfacts: "SEC CompanyFacts",
+  gdelt: "GDELT",
+  coingecko: "CoinGecko",
+  finnhub: "Finnhub",
+  marketaux: "Marketaux",
+  fmp: "FMP",
+  reddit: "Reddit",
+  alpaca_data: "Alpaca Data",
+  polygon: "Polygon",
+};
+
+function capabilityGapAction(gap: CapabilityGap): { label: string; to: string } | null {
+  const preferredSource = gap.source_ids[0];
+  if (!preferredSource) {
+    return null;
+  }
+
+  const sourceLabel = SOURCE_LABELS[preferredSource] ?? gap.label;
+  if (gap.status === "missing_key") {
+    const setupService = preferredSource === "alpaca_data" ? "alpaca" : preferredSource;
+    return {
+      label: `Set up ${sourceLabel}`,
+      to: `/setup?service=${encodeURIComponent(setupService)}`,
+    };
+  }
+
+  const focusKey = SOURCE_SETTINGS_KEYS[preferredSource];
+  if (!focusKey) {
+    return null;
+  }
+
+  return {
+    label: `Open ${sourceLabel} settings`,
+    to: `/settings?tab=data&focus=${encodeURIComponent(focusKey)}`,
+  };
+}
 
 function EmptyState({
   message,
@@ -232,6 +290,7 @@ export default function StrategyPage() {
         {strategyVisualizationTeam ? (
           <TeamVisualizationView
             comparison={comparison}
+            isVisible={activeTab === "visualize"}
             showComparison={false}
             team={strategyVisualizationTeam}
             teamSelector={{
@@ -262,6 +321,7 @@ export default function StrategyPage() {
         {compiledTeam ? (
           <TeamVisualizationView
             comparison={comparison}
+            isVisible={activeTab === "compare"}
             showComparison={true}
             team={compiledTeam}
           />
@@ -345,6 +405,7 @@ export default function StrategyPage() {
             {customVisualizationMode === "saved" && activeTeam ? (
               <TeamVisualizationView
                 comparison={null}
+                isVisible={activeTab === "custom" && customVisualizationMode === "saved"}
                 showComparison={false}
                 team={activeTeam.compiled_team}
                 teamSelector={{
@@ -372,6 +433,7 @@ export default function StrategyPage() {
               />
             ) : hasCustomTopology ? (
               <TeamStudio
+                isVisible={activeTab === "custom" && customVisualizationMode === "custom"}
                 titleSlot={
                   <TeamSelectorDropdown
                     activeTeam={activeTeam}
@@ -546,15 +608,26 @@ export default function StrategyPage() {
                   Capability Gaps
                 </p>
                 <div className="space-y-2">
-                  {latestTurn.capability_gaps.map((gap) => (
-                    <div key={gap.capability_id} className="rounded-xl bg-white/70 px-3 py-2">
-                      <p className="text-[12px] font-medium text-ink">{gap.label}</p>
-                      <p className="text-[12px] text-ink/65">{gap.detail}</p>
-                      {gap.recommended_action && (
-                        <p className="mt-1 text-[11px] text-ink/45">{gap.recommended_action}</p>
-                      )}
-                    </div>
-                  ))}
+                  {latestTurn.capability_gaps.map((gap) => {
+                    const action = capabilityGapAction(gap);
+                    return (
+                      <div key={gap.capability_id} className="rounded-xl bg-white/70 px-3 py-2">
+                        <p className="text-[12px] font-medium text-ink">{gap.label}</p>
+                        <p className="text-[12px] text-ink/65">{gap.detail}</p>
+                        {gap.recommended_action && (
+                          <p className="mt-1 text-[11px] text-ink/45">{gap.recommended_action}</p>
+                        )}
+                        {action ? (
+                          <Link
+                            className="mt-3 inline-flex rounded-full border border-tide/20 bg-tide/8 px-3 py-1.5 text-[11px] font-semibold text-tide transition hover:border-tide/35 hover:bg-tide/12"
+                            to={action.to}
+                          >
+                            {action.label}
+                          </Link>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

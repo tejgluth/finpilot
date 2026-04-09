@@ -38,15 +38,18 @@ export default function DataSourceSettingsPanel({
   settings,
   saving,
   onSave,
+  highlightKey,
 }: {
   settings: DataSourceSettingsType;
   saving: boolean;
   onSave: (patch: Record<string, unknown>) => Promise<void>;
+  highlightKey?: string | null;
 }) {
   return (
     <SettingsSectionEditor
       eyebrow="Settings"
       fields={fields}
+      highlightKey={highlightKey}
       note="Turn on only the providers you actually want FinPilot to use. Missing API keys will still prevent those providers from working."
       onSave={onSave}
       saving={saving}

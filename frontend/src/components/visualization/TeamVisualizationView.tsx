@@ -13,6 +13,7 @@ interface Props {
   comparison: TeamComparison | null;
   /** When true, comparison diff overlays are visible on nodes/edges */
   showComparison: boolean;
+  isVisible?: boolean;
   teamSelector?: {
     teams: TeamVersion[];
     activeTeam: TeamVersion | null;
@@ -32,6 +33,7 @@ export default function TeamVisualizationView({
   team,
   comparison,
   showComparison,
+  isVisible = true,
   teamSelector,
 }: Props) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -63,6 +65,7 @@ export default function TeamVisualizationView({
 
       {/* Graph */}
       <TeamVisualizationGraph
+        isVisible={isVisible}
         model={model}
         onNodeSelect={(id) => setSelectedNodeId(id === selectedNodeId ? null : id)}
       />

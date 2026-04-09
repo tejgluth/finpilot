@@ -17,6 +17,7 @@ import StudioAgentNode, { type StudioAgentNodeData } from "./StudioAgentNode";
 
 const NODE_TYPES = { studioAgentNode: StudioAgentNode } as const;
 const EDGE_TYPES = { influenceEdge: InfluenceEdge } as const;
+const FIT_VIEW_OPTIONS = { padding: 0.28, duration: 350, minZoom: 0.02 } as const;
 
 interface Props {
   model: VisualizationModel;
@@ -28,6 +29,7 @@ interface Props {
   onConnect: (sourceNodeId: string, targetNodeId: string) => void;
   onEdgeDelete?: (edgeId: string) => void;
   onNodePositionChange?: (nodeId: string, x: number, y: number) => void;
+  isVisible?: boolean;
 }
 
 function toRfNodes(
@@ -83,7 +85,11 @@ function ModelSyncer({
   connectingFrom,
   onNodeSelect,
   onEdgeDelete,
-}: Pick<Props, "model" | "studioMode" | "selectedNodeId" | "connectingFrom" | "onNodeSelect" | "onEdgeDelete">) {
+  isVisible = true,
+}: Pick<
+  Props,
+  "model" | "studioMode" | "selectedNodeId" | "connectingFrom" | "onNodeSelect" | "onEdgeDelete" | "isVisible"
+>) {
   const { setNodes, setEdges, fitView } = useReactFlow();
   const isEditable = studioMode === "edit" || studioMode === "expert";
 
@@ -93,11 +99,24 @@ function ModelSyncer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model, studioMode, selectedNodeId, connectingFrom, setNodes, setEdges, onEdgeDelete]);
 
-  // Only fit view on initial load (when model changes structurally, not just selection)
   useEffect(() => {
-    void fitView({ padding: 0.14, duration: 350 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model.nodes.length, fitView]);
+    if (!isVisible) {
+      return undefined;
+    }
+
+    let frameOne = 0;
+    let frameTwo = 0;
+    frameOne = window.requestAnimationFrame(() => {
+      frameTwo = window.requestAnimationFrame(() => {
+        void fitView(FIT_VIEW_OPTIONS);
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameOne);
+      window.cancelAnimationFrame(frameTwo);
+    };
+  }, [fitView, isVisible, model]);
 
   return null;
 }
@@ -111,6 +130,7 @@ export default function StudioGraph({
   onConnect,
   onEdgeDelete,
   onNodePositionChange,
+  isVisible = true,
 }: Props) {
   const isEditable = studioMode === "edit" || studioMode === "expert";
 
@@ -158,8 +178,8 @@ export default function StudioGraph({
         defaultNodes={toRfNodes(model, studioMode, selectedNodeId, connectingFrom, onNodeSelect)}
         deleteKeyCode={null}
         edgeTypes={EDGE_TYPES}
-        fitView
-        fitViewOptions={{ padding: 0.14 }}
+        fitViewOptions={FIT_VIEW_OPTIONS}
+        minZoom={0.02}
         nodesDraggable={isEditable}
         nodeTypes={NODE_TYPES}
         nodesConnectable={isEditable}
@@ -177,9 +197,10 @@ export default function StudioGraph({
           style={{ opacity: 0.04 }}
           variant={BackgroundVariant.Dots}
         />
-        <Controls aria-label="Graph controls" showInteractive={false} />
+        <Controls aria-label="Graph controls" showFitView showInteractive={false} />
         <ModelSyncer
           connectingFrom={connectingFrom}
+          isVisible={isVisible}
           model={model}
           onEdgeDelete={onEdgeDelete}
           onNodeSelect={onNodeSelect}

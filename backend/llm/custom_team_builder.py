@@ -8,23 +8,19 @@ heuristic + LLM-assisted ArchitectureDraft generation, and compilation.
 from __future__ import annotations
 
 import asyncio
-from copy import deepcopy
 from datetime import UTC, datetime
 from typing import Any
 import re
 import json
 
 from backend.agents.registry import (
-    ANALYSIS_FACTOR_MAP,
     EXECUTABLE_ANALYSIS_AGENTS,
-    REQUIRED_AGENTS,
 )
 from backend.database import load_state, save_state
 from backend.llm.capability_catalog import build_capability_catalog, build_capability_gaps, bindings_for_agent
 from backend.llm.provider import get_llm_client
 from backend.llm.strategy_builder import (
     extract_preferences,
-    _now_iso,
     _raw_user_messages,
 )
 from backend.llm.topology_compiler import compile_topology_to_flat_team, validate_topology
@@ -39,7 +35,6 @@ from backend.models.agent_team import (
     NodeModeEligibility,
     NodePromptContract,
     StrategyMessage,
-    StrategyPreferences,
     TeamBehaviorRules,
     TeamEdge,
     TeamNode,
@@ -768,7 +763,7 @@ async def _model_architecture_draft(
             user_settings=user_settings,
             fallback_reason="The architect model timed out before producing a response. Using a heuristic scaffold — try again or simplify the request.",
         )
-    except Exception as exc:
+    except Exception:
         return fallback, _build_fallback_turn(
             intent=intent,
             draft=fallback,

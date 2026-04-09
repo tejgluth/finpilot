@@ -20,7 +20,6 @@ from backend.settings import build_default_user_settings
 from backend.database import init_db
 from datetime import UTC, datetime
 from uuid import uuid4
-import pytest
 
 
 def _now() -> str:

@@ -23,7 +23,6 @@ from backend.models.agent_team import (
     NodePromptContract,
     TeamEdge,
     TeamNode,
-    TeamTopology,
     VALID_ANALYSIS_AGENTS,
     VisualPosition,
 )

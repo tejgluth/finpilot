@@ -26,19 +26,17 @@ function TeamCard({
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-[24px] border border-ink/10 bg-white p-5">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-ink">{template.display_name}</span>
-            {template.is_default && (
-              <span className="rounded-full bg-tide/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-tide">
-                Default
-              </span>
-            )}
-          </div>
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+        <div className="min-w-0">
+          <span className="block text-sm font-semibold text-ink">{template.display_name}</span>
           <div className="mt-0.5 text-[11px] text-ink/50">{COMPLEXITY_LABEL[template.complexity]}</div>
         </div>
-        <div className="flex flex-shrink-0 flex-col items-end gap-1">
+        <div className="flex flex-shrink-0 flex-col items-start gap-1 sm:items-end">
+          {template.is_default && (
+            <span className="rounded-full bg-tide/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-tide">
+              Default
+            </span>
+          )}
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${RISK_COLORS[template.risk_level] ?? "bg-slate-100 text-slate-700"}`}
           >

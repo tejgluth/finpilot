@@ -6,7 +6,6 @@ patch generation/application, and team saving.
 """
 from __future__ import annotations
 
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -31,7 +30,6 @@ from backend.models.agent_team import (
     CustomConversation,
     TeamTopology,
     TeamValidationResult,
-    TeamVersion,
 )
 from backend.security.audit_logger import AuditLogger
 from backend.settings.user_settings import UserSettings, default_user_settings

@@ -15,10 +15,12 @@ import InfluenceEdge from "./InfluenceEdge";
 
 const NODE_TYPES = { agentNode: AgentNode } as const;
 const EDGE_TYPES = { influenceEdge: InfluenceEdge } as const;
+const FIT_VIEW_OPTIONS = { padding: 0.2, duration: 350, minZoom: 0.12 } as const;
 
 interface Props {
   model: VisualizationModel;
   onNodeSelect: (id: string | null) => void;
+  isVisible?: boolean;
 }
 
 function toRfNodes(model: VisualizationModel, onNodeSelect: Props["onNodeSelect"]): Node[] {
@@ -54,16 +56,34 @@ function toRfEdges(model: VisualizationModel): Edge[] {
  * Child component that calls useReactFlow() to sync model changes.
  * Must be rendered inside a <ReactFlow> tree (which provides the context).
  */
-function ModelSyncer({ model, onNodeSelect }: Props) {
+function ModelSyncer({ model, onNodeSelect, isVisible = true }: Props) {
   const { setNodes, setEdges, fitView } = useReactFlow();
 
   useEffect(() => {
     setNodes(toRfNodes(model, onNodeSelect));
     setEdges(toRfEdges(model));
-    void fitView({ padding: 0.14, duration: 350 });
     // onNodeSelect is stable per render of TeamVisualizationView, exclude from deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model, setNodes, setEdges, fitView]);
+  }, [model, setNodes, setEdges]);
+
+  useEffect(() => {
+    if (!isVisible) {
+      return undefined;
+    }
+
+    let frameOne = 0;
+    let frameTwo = 0;
+    frameOne = window.requestAnimationFrame(() => {
+      frameTwo = window.requestAnimationFrame(() => {
+        void fitView(FIT_VIEW_OPTIONS);
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameOne);
+      window.cancelAnimationFrame(frameTwo);
+    };
+  }, [fitView, isVisible, model]);
 
   return null;
 }
@@ -72,7 +92,11 @@ function ModelSyncer({ model, onNodeSelect }: Props) {
  * ReactFlow graph for the agent team topology.
  * Read-only in v1; architecture supports future editable mode.
  */
-export default function TeamVisualizationGraph({ model, onNodeSelect }: Props) {
+export default function TeamVisualizationGraph({
+  model,
+  onNodeSelect,
+  isVisible = true,
+}: Props) {
   return (
     <div
       className="relative w-full overflow-hidden rounded-[24px] border border-ink/8 bg-mist"
@@ -84,8 +108,8 @@ export default function TeamVisualizationGraph({ model, onNodeSelect }: Props) {
         defaultEdges={toRfEdges(model)}
         defaultNodes={toRfNodes(model, onNodeSelect)}
         edgeTypes={EDGE_TYPES}
-        fitView
-        fitViewOptions={{ padding: 0.14 }}
+        fitViewOptions={FIT_VIEW_OPTIONS}
+        minZoom={0.12}
         nodesDraggable={false}
         nodeTypes={NODE_TYPES}
         nodesConnectable={false}
@@ -100,10 +124,10 @@ export default function TeamVisualizationGraph({ model, onNodeSelect }: Props) {
           style={{ opacity: 0.04 }}
           variant={BackgroundVariant.Dots}
         />
-        <Controls aria-label="Graph controls" showInteractive={false} />
+        <Controls aria-label="Graph controls" showFitView={false} showInteractive={false} />
         <GraphLegend />
         {/* Syncs node/edge state whenever the model changes after initial mount */}
-        <ModelSyncer model={model} onNodeSelect={onNodeSelect} />
+        <ModelSyncer isVisible={isVisible} model={model} onNodeSelect={onNodeSelect} />
       </ReactFlow>
     </div>
   );

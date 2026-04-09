@@ -73,7 +73,6 @@ export default function BacktestEligibilityPanel({ profile }: Props) {
   if (!profile) return null;
 
   const reasons = profile.ineligibility_reasons ?? [];
-  const warnings = profile.experimental_warnings ?? [];
 
   return (
     <div className="rounded-xl border border-ink/10 bg-white p-4">
@@ -95,15 +94,6 @@ export default function BacktestEligibilityPanel({ profile }: Props) {
           {reasons.map((r, i) => (
             <p key={i} className="text-[11px] text-ember/80">
               • {r}
-            </p>
-          ))}
-        </div>
-      )}
-      {warnings.length > 0 && (
-        <div className="mt-2 rounded-lg bg-gold/5 px-3 py-2">
-          {warnings.map((w, i) => (
-            <p key={i} className="text-[11px] text-gold/80">
-              ⚠ {w}
             </p>
           ))}
         </div>

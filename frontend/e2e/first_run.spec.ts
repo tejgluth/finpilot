@@ -33,20 +33,13 @@ test("setup wizard renders at root", async ({ page }) => {
   await page.goto("/");
 
   // The SetupWizard shows a loading state first, then the wizard panels.
-  // Step 4 (Trading risk acknowledgment) is always rendered once loaded.
+  // The setup flow now focuses on local configuration only.
   await expect(
-    page.getByText("Trading risk acknowledgment"),
+    page.getByText("Local onboarding"),
   ).toBeVisible({ timeout: 10_000 });
 
-  // The acknowledgment step has an eyebrow label "Step 4"
-  await expect(page.getByText("Step 4")).toBeVisible();
-
-  // All 9 risk items are present
-  await expect(
-    page.getByText("FinPilot is a research tool, not investment advice", {
-      exact: false,
-    }),
-  ).toBeVisible();
+  await expect(page.getByText("Data source posture")).toBeVisible();
+  await expect(page.getByText("Detected Alpaca plan")).toBeVisible();
 });
 
 // ── 3. Safe local mode with no keys ───────────────────────────────────────────

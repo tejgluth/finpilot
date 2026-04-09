@@ -1066,7 +1066,6 @@ async def save_team_version(
     compiled_payload = compiled_team.model_copy(deep=True)
     compiled_payload.version_number = next_version
     # Validate creation_source literal
-    from typing import Literal, get_args
     _valid_sources = ("conversation", "premade", "custom_conversation", "studio_edit", "patch")
     safe_source = creation_source if creation_source in _valid_sources else "conversation"
     version = TeamVersion.from_compiled(

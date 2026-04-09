@@ -1833,7 +1833,6 @@ def _build_next_open_benchmark_curve(
     if entry_price is None or entry_price <= 0:
         closes = [float(value) for value in close_prices[ticker].loc[calendar].dropna().tolist()]
         return build_benchmark_curve(starting_cash, closes)
-    series = close_prices[ticker].loc[calendar]
     curve: list[float] = []
     for day in calendar:
         market_price = _close_price(close_prices, ticker, day)

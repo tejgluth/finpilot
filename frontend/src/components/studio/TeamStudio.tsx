@@ -21,9 +21,10 @@ const MODE_TABS: { id: StudioMode; label: string }[] = [
 
 interface Props {
   titleSlot?: ReactNode;
+  isVisible?: boolean;
 }
 
-export default function TeamStudio({ titleSlot }: Props) {
+export default function TeamStudio({ titleSlot, isVisible = true }: Props) {
   const {
     draft,
     compiledTeam,
@@ -232,6 +233,7 @@ export default function TeamStudio({ titleSlot }: Props) {
         <div>
           <StudioGraph
             connectingFrom={connectingFrom}
+            isVisible={isVisible}
             model={model}
             onConnect={handleConnect}
             onEdgeDelete={isEditable ? removeEdge : undefined}

@@ -28,6 +28,13 @@ def _default_model(provider_name: str, llm_settings: "LlmSettings | None") -> st
     return "unknown-model"
 
 
+def _google_message_role(role: str) -> str:
+    normalized = role.strip().lower()
+    if normalized == "assistant":
+        return "model"
+    return "user"
+
+
 @lru_cache(maxsize=32)
 def _ollama_model_available(base_url: str, model: str) -> bool | None:
     try:
@@ -143,7 +150,10 @@ class LLMClient:
     ) -> str:
         payload = {
             "systemInstruction": {"parts": [{"text": system}]},
-            "contents": [{"role": item["role"], "parts": [{"text": item["content"]}]} for item in messages],
+            "contents": [
+                {"role": _google_message_role(item["role"]), "parts": [{"text": item["content"]}]}
+                for item in messages
+            ],
             "generationConfig": {
                 "temperature": temperature,
                 "maxOutputTokens": max_tokens,

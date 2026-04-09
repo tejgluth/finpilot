@@ -1,4 +1,4 @@
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import type {
   ProviderGuide,
   SaveSetupSecretsResponse,
@@ -36,6 +36,7 @@ interface ApiKeyStepProps {
   loading: boolean;
   saving: boolean;
   error: string | null;
+  focusService?: string | null;
   onSave: (payload: {
     ai_provider: "openai" | "anthropic" | "google" | "ollama";
     alpaca_mode: "paper" | "live";
@@ -100,6 +101,7 @@ function ServiceCard({
   setDraftValue,
   alpacaMode,
   setAlpacaMode,
+  focusService,
 }: {
   guide: ServiceGuide;
   status?: SecretKeyStatus;
@@ -107,14 +109,22 @@ function ServiceCard({
   setDraftValue: (key: string, value: string) => void;
   alpacaMode: "paper" | "live";
   setAlpacaMode: (value: "paper" | "live") => void;
+  focusService?: string | null;
 }) {
   const statusDetail =
     guide.id === "alpaca"
       ? "Required if you want FinPilot to place paper or live trades through Alpaca."
       : "Optional until you want this data source active in your signals.";
+  const isFocused = focusService === guide.id;
 
   return (
-    <details className="rounded-[24px] border border-ink/8 bg-white/85 p-4 open:shadow-soft" open={guide.id === "alpaca"}>
+    <details
+      className={`rounded-[24px] border bg-white/85 p-4 open:shadow-soft ${
+        isFocused ? "border-tide/35 ring-2 ring-tide/15" : "border-ink/8"
+      }`}
+      id={`setup-service-${guide.id}`}
+      open={guide.id === "alpaca" || isFocused}
+    >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -200,6 +210,7 @@ export default function ApiKeyStep({
   status,
   saving,
   error,
+  focusService,
   onSave,
 }: ApiKeyStepProps) {
   const [selectedProvider, setSelectedProvider] = useState<ProviderGuide["id"]>(
@@ -228,6 +239,17 @@ export default function ApiKeyStep({
   const setDraftValue = (envKey: string, value: string) => {
     setDraft((current) => ({ ...current, [envKey]: value }));
   };
+
+  useEffect(() => {
+    if (!focusService) {
+      return;
+    }
+
+    const element = document.getElementById(`setup-service-${focusService}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [focusService]);
 
   const submit = async () => {
     setMessage("");
@@ -374,6 +396,7 @@ export default function ApiKeyStep({
                 key={guide.id}
                 alpacaMode={alpacaMode}
                 draft={draft}
+                focusService={focusService}
                 guide={guide}
                 setAlpacaMode={setAlpacaMode}
                 setDraftValue={setDraftValue}

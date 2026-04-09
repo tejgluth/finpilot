@@ -10,12 +10,25 @@ compiled-agent infrastructure safely.
 from __future__ import annotations
 
 import json
-from collections import deque
-from copy import deepcopy
 from hashlib import sha256
-from typing import Any
 
 from backend.llm.prompt_packs import PROMPT_PACKS_BY_AGENT
+from backend.models.agent_team import (
+    REQUIRED_DECISION_AGENTS,
+    VALID_ANALYSIS_AGENTS,
+    ArchitectureDraft,
+    CompiledAgentSpec,
+    CompiledReasoningSpec,
+    CompiledTeam,
+    NodeModeEligibility,
+    StrategyPreferences,
+    TeamEdge,
+    TeamExecutionProfile,
+    TeamNode,
+    TeamTopology,
+    TeamValidationResult,
+    ValidationReport,
+)
 
 # Strict-backtest eligibility per analysis agent.
 # This mirrors HISTORICAL_SUPPORT in backtester/capabilities.py but is
@@ -36,23 +49,6 @@ def _get_historical_support() -> dict:
         for agent in ("fundamentals", "technicals", "sentiment", "macro", "value", "momentum", "growth"):
             result[agent] = {"honored_in_strict": agent in _STRICT_ELIGIBLE}
         return result
-from backend.models.agent_team import (
-    REQUIRED_DECISION_AGENTS,
-    VALID_ANALYSIS_AGENTS,
-    ArchitectureDraft,
-    CompiledAgentSpec,
-    CompiledReasoningSpec,
-    CompiledTeam,
-    NodeModeEligibility,
-    StrategyPreferences,
-    TeamBehaviorRules,
-    TeamEdge,
-    TeamExecutionProfile,
-    TeamNode,
-    TeamTopology,
-    TeamValidationResult,
-    ValidationReport,
-)
 
 # Data domains that have real data fetchers.
 DATA_INGESTION_DOMAINS: frozenset[str] = frozenset(VALID_ANALYSIS_AGENTS)
@@ -103,8 +99,6 @@ def validate_topology(topology: TeamTopology) -> TeamValidationResult:
 
     ingestion_nodes = [n for n in topology.nodes if _is_ingestion_node(n)]
     terminal_nodes = [n for n in topology.nodes if _is_terminal_node(n)]
-    # Backward compat collections for eligibility computation
-    analysis_nodes = ingestion_nodes  # alias
 
     # Rule 1: at least one data-ingestion node
     if not ingestion_nodes:
@@ -452,7 +446,7 @@ def compile_topology_to_flat_team(
             asset_universe=intent.asset_universe,
             sector_exclusions=intent.sector_exclusions,
         )
-    except Exception as exc:
+    except Exception:
         # Name validation failure — sanitize name
         import re
         safe_name = re.sub(r"[^a-zA-Z0-9\s\-_]", " ", draft.proposed_name or "Custom Team").strip()[:64] or "Custom Team"

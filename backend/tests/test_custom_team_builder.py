@@ -1,7 +1,6 @@
 """Tests for backend/llm/custom_team_builder.py"""
 from __future__ import annotations
 
-import pytest
 
 from backend.llm.custom_team_builder import (
     _heuristic_architecture_draft,

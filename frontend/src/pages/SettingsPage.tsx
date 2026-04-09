@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import ThinkingDots from "../components/common/ThinkingDots";
 import { useSettings } from "../hooks/useSettings";
 import AgentSettingsPanel from "../components/settings/AgentSettings";
@@ -9,9 +10,35 @@ import LlmSettingsPanel from "../components/settings/LlmSettings";
 import SystemSettingsPanel from "../components/settings/SystemSettings";
 import StatusBadge from "../components/common/StatusBadge";
 
+const SETTINGS_TABS = ["llm", "data", "agents", "backtest", "guardrails", "system"] as const;
+type SettingsTab = (typeof SETTINGS_TABS)[number];
+
+function isSettingsTab(value: string | null): value is SettingsTab {
+  return value !== null && SETTINGS_TABS.includes(value as SettingsTab);
+}
+
 export default function SettingsPage() {
   const { settings, loading, error, patchSettings } = useSettings();
-  const [tab, setTab] = useState<"llm" | "data" | "agents" | "backtest" | "guardrails" | "system">("llm");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTab = searchParams.get("tab");
+  const [tab, setTab] = useState<SettingsTab>(isSettingsTab(searchTab) ? searchTab : "llm");
+  const focusKey = searchParams.get("focus");
+
+  useEffect(() => {
+    if (isSettingsTab(searchTab)) {
+      setTab(searchTab);
+    }
+  }, [searchTab]);
+
+  function handleTabChange(nextTab: SettingsTab) {
+    setTab(nextTab);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("tab", nextTab);
+    if (nextTab !== "data") {
+      nextParams.delete("focus");
+    }
+    setSearchParams(nextParams, { replace: true });
+  }
 
   if (error && !settings) {
     return <div className="rounded-[28px] bg-white/80 p-6 shadow-soft">Unable to load settings: {error}</div>;
@@ -35,7 +62,7 @@ export default function SettingsPage() {
           <button
             key={value}
             className="rounded-full border border-ink/10 px-4 py-2 text-sm"
-            onClick={() => setTab(value as "llm" | "data" | "agents" | "backtest" | "guardrails" | "system")}
+            onClick={() => handleTabChange(value as SettingsTab)}
             type="button"
           >
             <StatusBadge label={label} tone={tab === value ? "good" : "neutral"} />
@@ -43,7 +70,14 @@ export default function SettingsPage() {
         ))}
       </div>
       {tab === "llm" ? <LlmSettingsPanel onSave={patchSettings} saving={loading} settings={settings.llm} /> : null}
-      {tab === "data" ? <DataSourceSettingsPanel onSave={patchSettings} saving={loading} settings={settings.data_sources} /> : null}
+      {tab === "data" ? (
+        <DataSourceSettingsPanel
+          highlightKey={focusKey}
+          onSave={patchSettings}
+          saving={loading}
+          settings={settings.data_sources}
+        />
+      ) : null}
       {tab === "agents" ? <AgentSettingsPanel onSave={patchSettings} saving={loading} settings={settings.agents} /> : null}
       {tab === "backtest" ? <BacktestSettingsPanel onSave={patchSettings} saving={loading} settings={settings.backtest} /> : null}
       {tab === "guardrails" ? <GuardrailSettingsPanel onSave={patchSettings} saving={loading} settings={settings.guardrails} /> : null}

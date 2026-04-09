@@ -3,17 +3,8 @@ from __future__ import annotations
 
 import importlib.util
 import sys
-
-# Import capabilities module directly to avoid triggering backtester/__init__.py
-# which imports engine.py which needs yfinance.
-_caps_spec = importlib.util.spec_from_file_location(
-    "backend.backtester.capabilities",
-    "backend/backtester/capabilities.py",
-)
-_caps_mod = importlib.util.module_from_spec(_caps_spec)  # type: ignore[arg-type]
-sys.modules.setdefault("backend.backtester.capabilities", _caps_mod)
-_caps_spec.loader.exec_module(_caps_mod)  # type: ignore[union-attr]
-build_historical_gap_report = _caps_mod.build_historical_gap_report
+from datetime import UTC, datetime
+from uuid import uuid4
 
 from backend.llm.strategy_builder import default_compiled_team
 from backend.llm.topology_compiler import compile_topology_to_flat_team
@@ -23,10 +14,22 @@ from backend.models.agent_team import (
     TeamEdge,
     TeamNode,
     TeamTopology,
-    VisualPosition,
 )
-from datetime import UTC, datetime
-from uuid import uuid4
+
+
+def _load_build_historical_gap_report():
+    """Load capabilities without importing backend.backtester package side effects."""
+    caps_spec = importlib.util.spec_from_file_location(
+        "backend.backtester.capabilities",
+        "backend/backtester/capabilities.py",
+    )
+    caps_mod = importlib.util.module_from_spec(caps_spec)  # type: ignore[arg-type]
+    sys.modules.setdefault("backend.backtester.capabilities", caps_mod)
+    caps_spec.loader.exec_module(caps_mod)  # type: ignore[union-attr]
+    return caps_mod.build_historical_gap_report
+
+
+build_historical_gap_report = _load_build_historical_gap_report()
 
 
 def _now() -> str:

@@ -11,7 +11,6 @@ from backend.llm.topology_compiler import (
 )
 from backend.models.agent_team import (
     ArchitectureDraft,
-    ArchitectureIntent,
     NodePromptContract,
     PromptOverride,
     TeamEdge,
